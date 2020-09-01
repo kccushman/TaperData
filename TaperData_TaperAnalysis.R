@@ -1,4 +1,6 @@
 ## NOTE: if working from the current Git repository, then workflow will function from step 2.
+TaperSample <- read.csv("DataFile_TaperParameterSample.csv")
+
 
 # Load needed packages ### left for refernce; replaced with package::function notation throughout. 
   # library(splancs)
@@ -355,52 +357,96 @@
     TaperSample$DBH <- TaperSample$DBH/10
     
 #### 3. Compare models explaining variation in taper parameter ####
+    
+    # Models WITHOUT family random effect
+    
     # Null model
-    modelnull <- lmer(log(b1.iso)~ (1|Site) + (1|Family), data = TaperSample)
+    modelnull <- lme4::lmer(log(b1.iso)~ (1|Site), data = TaperSample)
     # With one variable
-    model1a <- lmer(log(b1.iso)~log(DBH) + (1|Site) + (1|Family), data = TaperSample)
-    model1b <- lmer(log(b1.iso)~log(HOM) + (1|Site) + (1|Family), data = TaperSample)
-    model1c <- lmer(log(b1.iso)~log(WSG) + (1|Site) + (1|Family), data = TaperSample)
+    model1a <- lme4::lmer(log(b1.iso)~log(DBH) + (1|Site), data = TaperSample)
+    model1b <- lme4::lmer(log(b1.iso)~log(HOM) + (1|Site), data = TaperSample)
+    model1c <- lme4::lmer(log(b1.iso)~log(WSG) + (1|Site), data = TaperSample)
     # With two variables
-    model2a <- lmer(log(b1.iso)~log(DBH) + log(HOM) + (1|Site) + (1|Family), data = TaperSample)
-    model2b <- lmer(log(b1.iso)~log(DBH) + log(WSG) + (1|Site) + (1|Family), data = TaperSample)
-    model2c <- lmer(log(b1.iso)~log(HOM) + log(WSG) + (1|Site) + (1|Family), data = TaperSample)
+    model2a <- lme4::lmer(log(b1.iso)~log(DBH) + log(HOM) + (1|Site), data = TaperSample)
+    model2b <- lme4::lmer(log(b1.iso)~log(DBH) + log(WSG) + (1|Site), data = TaperSample)
+    model2c <- lme4::lmer(log(b1.iso)~log(HOM) + log(WSG) + (1|Site), data = TaperSample)
     # With three variables
-    model3a <- lmer(log(b1.iso)~log(DBH) + log(HOM) + log(WSG) + (1|Site) + (1|Family), data = TaperSample)
+    model3a <- lme4::lmer(log(b1.iso)~log(DBH) + log(HOM) + log(WSG) + (1|Site), data = TaperSample)
+    
+    # Models WITH family random effect
+    
+    # Null model
+    modelnull.f <- lme4::lmer(log(b1.iso)~ (1|Site) + (1|Family), data = TaperSample)
+    # With one variable
+    model1a.f <- lme4::lmer(log(b1.iso)~log(DBH) + (1|Site) + (1|Family), data = TaperSample)
+    model1b.f <- lme4::lmer(log(b1.iso)~log(HOM) + (1|Site) + (1|Family), data = TaperSample)
+    model1c.f <- lme4::lmer(log(b1.iso)~log(WSG) + (1|Site) + (1|Family), data = TaperSample)
+    # With two variables
+    model2a.f <- lme4::lmer(log(b1.iso)~log(DBH) + log(HOM) + (1|Site) + (1|Family), data = TaperSample)
+    model2b.f <- lme4::lmer(log(b1.iso)~log(DBH) + log(WSG) + (1|Site) + (1|Family), data = TaperSample)
+    model2c.f <- lme4::lmer(log(b1.iso)~log(HOM) + log(WSG) + (1|Site) + (1|Family), data = TaperSample)
+    # With three variables
+    model3a.f <- lme4::lmer(log(b1.iso)~log(DBH) + log(HOM) + log(WSG) + (1|Site) + (1|Family), data = TaperSample)
     
     # Make a table comparing models (for main text)    
-    ModelCompare <- anova(modelnull, model1a, model1b, model1c, model2a, model2b, model2c, model3a)
-    ModelCompare$R2marginal <- c(r.squaredGLMM(modelnull)[1], 
-                                 r.squaredGLMM(model1a)[1], 
-                                 r.squaredGLMM(model1b)[1], 
-                                 r.squaredGLMM(model1c)[1], 
-                                 r.squaredGLMM(model2a)[1], 
-                                 r.squaredGLMM(model2b)[1], 
-                                 r.squaredGLMM(model2c)[1], 
-                                 r.squaredGLMM(model3a)[1])
-    ModelCompare$R2conditional <- c(r.squaredGLMM(modelnull)[2], 
-                                    r.squaredGLMM(model1a)[2], 
-                                    r.squaredGLMM(model1b)[2], 
-                                    r.squaredGLMM(model1c)[2], 
-                                    r.squaredGLMM(model2a)[2], 
-                                    r.squaredGLMM(model2b)[2], 
-                                    r.squaredGLMM(model2c)[2], 
-                                    r.squaredGLMM(model3a)[2])
-    ModelCompare$Description <- c(paste("Log(b1) = ",round(summary(modelnull)$coefficients[1],3)," + Site + Family", sep=""),
-                                  paste("Log(b1) = ",round(summary(model1a)$coefficients[1,1],3)," + ",round(summary(model1a)$coefficients[2,1],3),"*log(DAB) + Site + Family", sep=""),
-                                  paste("Log(b1) = ",round(summary(model1b)$coefficients[1,1],3)," + ",round(summary(model1b)$coefficients[2,1],3),"*log(HOM) + Site + Family", sep=""),
-                                  paste("Log(b1) = ",round(summary(model1c)$coefficients[1,1],3)," + ",round(summary(model1c)$coefficients[2,1],3),"*log(WSG) + Site + Family", sep=""),
-                                  paste("Log(b1) = ",round(summary(model2a)$coefficients[1,1],3)," + ",round(summary(model2a)$coefficients[2,1],3),"*log(DAB) ",round(summary(model2a)$coefficients[3,1],3),"*log(HOM) ", "+ Site + Family", sep=""),
-                                  paste("Log(b1) = ",round(summary(model2b)$coefficients[1,1],3)," + ",round(summary(model2b)$coefficients[2,1],3),"*log(DAB) ",round(summary(model2b)$coefficients[3,1],3),"*log(WSG) ", "+ Site + Family", sep=""),
-                                  paste("Log(b1) = ",round(summary(model2c)$coefficients[1,1],3)," + ",round(summary(model2c)$coefficients[2,1],3),"*log(HOM) ",round(summary(model2c)$coefficients[3,1],3),"*log(WSG) ", "+ Site + Family", sep=""),
-                                  paste("Log(b1) = ",round(summary(model3a)$coefficients[1,1],3)," + ",round(summary(model3a)$coefficients[2,1],3),"*log(DAB) ",round(summary(model3a)$coefficients[3,1],3),"*log(HOM) ",round(summary(model3a)$coefficients[4,1],3),"*log(WSG) ", "+ Site + Family", sep=""))
+    ModelCompare <- anova(modelnull, model1a, model1b, model1c, model2a, model2b, model2c, model3a,
+                          modelnull.f, model1a.f, model1b.f, model1c.f, model2a.f, model2b.f, model2c.f, model3a.f)
+    ModelCompare$R2marginal <- c(MuMIn::r.squaredGLMM(modelnull)[1], 
+                                 MuMIn::r.squaredGLMM(model1a)[1], 
+                                 MuMIn::r.squaredGLMM(model1b)[1], 
+                                 MuMIn::r.squaredGLMM(model1c)[1], 
+                                 MuMIn::r.squaredGLMM(modelnull.f)[1], 
+                                 MuMIn::r.squaredGLMM(model2a)[1], 
+                                 MuMIn::r.squaredGLMM(model2b)[1], 
+                                 MuMIn::r.squaredGLMM(model2c)[1],
+                                 MuMIn::r.squaredGLMM(model1a.f)[1], 
+                                 MuMIn::r.squaredGLMM(model1b.f)[1], 
+                                 MuMIn::r.squaredGLMM(model1c.f)[1], 
+                                 MuMIn::r.squaredGLMM(model3a)[1], 
+                                 MuMIn::r.squaredGLMM(model2a.f)[1], 
+                                 MuMIn::r.squaredGLMM(model2b.f)[1], 
+                                 MuMIn::r.squaredGLMM(model2c.f)[1], 
+                                 MuMIn::r.squaredGLMM(model3a.f)[1])
+    ModelCompare$R2conditional <- c(MuMIn::r.squaredGLMM(modelnull)[2], 
+                                    MuMIn::r.squaredGLMM(model1a)[2], 
+                                    MuMIn::r.squaredGLMM(model1b)[2], 
+                                    MuMIn::r.squaredGLMM(model1c)[2], 
+                                    MuMIn::r.squaredGLMM(modelnull.f)[2], 
+                                    MuMIn::r.squaredGLMM(model2a)[2], 
+                                    MuMIn::r.squaredGLMM(model2b)[2], 
+                                    MuMIn::r.squaredGLMM(model2c)[2],
+                                    MuMIn::r.squaredGLMM(model1a.f)[2], 
+                                    MuMIn::r.squaredGLMM(model1b.f)[2], 
+                                    MuMIn::r.squaredGLMM(model1c.f)[2], 
+                                    MuMIn::r.squaredGLMM(model3a)[2], 
+                                    MuMIn::r.squaredGLMM(model2a.f)[2], 
+                                    MuMIn::r.squaredGLMM(model2b.f)[2], 
+                                    MuMIn::r.squaredGLMM(model2c.f)[2], 
+                                    MuMIn::r.squaredGLMM(model3a.f)[2])
+    ModelCompare$Description <- c(paste("Log(b1) = ",round(summary(modelnull)$coefficients[1],3)," + Site", sep=""),
+                                  paste("Log(b1) = ",round(summary(model1a)$coefficients[1,1],3)," + ",round(summary(model1a)$coefficients[2,1],3),"*log(DAB) + Site", sep=""),
+                                  paste("Log(b1) = ",round(summary(model1b)$coefficients[1,1],3)," + ",round(summary(model1b)$coefficients[2,1],3),"*log(HOM) + Site", sep=""),
+                                  paste("Log(b1) = ",round(summary(model1c)$coefficients[1,1],3)," + ",round(summary(model1c)$coefficients[2,1],3),"*log(WSG) + Site", sep=""),
+                                  paste("Log(b1) = ",round(summary(modelnull.f)$coefficients[1],3)," + Site + Family", sep=""),
+                                  paste("Log(b1) = ",round(summary(model2a)$coefficients[1,1],3)," + ",round(summary(model2a)$coefficients[2,1],3),"*log(DAB) ",round(summary(model2a)$coefficients[3,1],3),"*log(HOM) ", "+ Site", sep=""),
+                                  paste("Log(b1) = ",round(summary(model2b)$coefficients[1,1],3)," + ",round(summary(model2b)$coefficients[2,1],3),"*log(DAB) ",round(summary(model2b)$coefficients[3,1],3),"*log(WSG) ", "+ Site", sep=""),
+                                  paste("Log(b1) = ",round(summary(model2c)$coefficients[1,1],3)," + ",round(summary(model2c)$coefficients[2,1],3),"*log(HOM) ",round(summary(model2c)$coefficients[3,1],3),"*log(WSG) ", "+ Site", sep=""),
+                                  paste("Log(b1) = ",round(summary(model1a.f)$coefficients[1,1],3)," + ",round(summary(model1a.f)$coefficients[2,1],3),"*log(DAB) + Site + Family", sep=""),
+                                  paste("Log(b1) = ",round(summary(model1b.f)$coefficients[1,1],3)," + ",round(summary(model1b.f)$coefficients[2,1],3),"*log(HOM) + Site + Family", sep=""),
+                                  paste("Log(b1) = ",round(summary(model1c.f)$coefficients[1,1],3)," + ",round(summary(model1c.f)$coefficients[2,1],3),"*log(WSG) + Site + Family", sep=""),
+                                  paste("Log(b1) = ",round(summary(model3a)$coefficients[1,1],3)," + ",round(summary(model3a)$coefficients[2,1],3),"*log(DAB) ",round(summary(model3a)$coefficients[3,1],3),"*log(HOM) ",round(summary(model3a)$coefficients[4,1],3),"*log(WSG) ", "+ Site", sep=""),
+                                  paste("Log(b1) = ",round(summary(model2a.f)$coefficients[1,1],3)," + ",round(summary(model2a.f)$coefficients[2,1],3),"*log(DAB) ",round(summary(model2a.f)$coefficients[3,1],3),"*log(HOM) ", "+ Site + Family", sep=""),
+                                  paste("Log(b1) = ",round(summary(model2b.f)$coefficients[1,1],3)," + ",round(summary(model2b.f)$coefficients[2,1],3),"*log(DAB) ",round(summary(model2b.f)$coefficients[3,1],3),"*log(WSG) ", "+ Site + Family", sep=""),
+                                  paste("Log(b1) = ",round(summary(model2c.f)$coefficients[1,1],3)," + ",round(summary(model2c.f)$coefficients[2,1],3),"*log(HOM) ",round(summary(model2c.f)$coefficients[3,1],3),"*log(WSG) ", "+ Site + Family", sep=""),
+                                  paste("Log(b1) = ",round(summary(model3a.f)$coefficients[1,1],3)," + ",round(summary(model3a.f)$coefficients[2,1],3),"*log(DAB) ",round(summary(model3a.f)$coefficients[3,1],3),"*log(HOM) ",round(summary(model3a.f)$coefficients[4,1],3),"*log(WSG) ", "+ Site + Family", sep=""))
+    ModelCompare$Description <- as.character(ModelCompare$Description)
     
     ModelResults <- ModelCompare[,c("Description","Df","AIC","R2marginal","R2conditional")]
     ModelResults <- ModelResults[order(ModelResults$AIC),]
     ModelResults$dAIC <- ModelResults$AIC-min(ModelResults$AIC)
-    write.csv(ModelResults, file="Table 2_Taper mixed model comparison.csv",
+    write.csv(ModelResults, file="Table2_TaperMixedModelComparison.csv",
               row.names = F)
-    write.csv(TaperSample, file="Data file_taper parameter sample.csv",
+    write.csv(TaperSample, file="DataFile_TaperParameterSample.csv",
               row.names = F)
 
   # Verify that residuals of best model don't vary by site using a 1-way ANOVA

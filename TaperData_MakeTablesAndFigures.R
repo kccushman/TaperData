@@ -20,7 +20,7 @@
   site.cols$col <- as.character(site.cols$col)
 
 #### Figure 2 : Variation of taper parameter with tree qualities ####
-  TaperSample <- read.csv("Data file_taper parameter sample.csv")
+  TaperSample <- read.csv("DataFile_TaperParameterSample.csv")
 
   cexAx <- 1.2
   axisSize <- 1
@@ -28,7 +28,7 @@
   tiff(file="Figure2_TaperParameterVariation.tiff", height=2.2, width=8, units="in", res=300)
     layout(matrix(c(1,2,3,4),1,4,byrow = T),
            widths=c(1.5,1.5,1.5,0.8),heights=c(1,1,1,1))
-    par(mar=c(4,3,0,0), xpd=F,family="serif", las=1, oma=c(0,5,1,1))
+    par(mar=c(4,3,0,0), xpd=F,family="sans", las=1, oma=c(0,5,1,1))
 
     plot(log(b1.iso)~log(DBH), data=TaperSample, type='n',
          ylim=range(log(TaperSample$b1.iso),na.rm=T)+c(0,1),
@@ -36,12 +36,12 @@
          cex.axis=cexAx)
     mtext("log DAB (cm)", side=1, line=2.2, cex=axisSize)
     mtext("log Taper \nparameter", side=2, line=2, cex=axisSize)
-    text(x=3,y=-1.1,"A", cex=textCex+0.1)
+    text(x=3,y=-1.1,"a", cex=textCex+0.1)
     for(i in 1:length(sites)){
       points(log(b1.iso)~log(DBH), data=TaperSample[TaperSample$Site==sites[i],],
              col=site.cols[site.cols$site==sites[i],"col"], pch=20)
     }
-    taperDABlm <- lmer(log(b1.iso)~log(DBH) + (1|Site) + (1|Family), data = TaperSample)
+    taperDABlm <- lme4::lmer(log(b1.iso)~log(DBH) + (1|Site), data = TaperSample)
     abline(a=summary(taperDABlm)$coefficients[1,1], b=summary(taperDABlm)$coefficients[2,1])
     
     plot(log(b1.iso)~log(HOM), data=TaperSample, type='n',
@@ -50,12 +50,12 @@
          yaxt='n',
          cex.axis=cexAx)
   mtext("log HOM (cm)", side=1, line=2.2, cex=axisSize)
-  text(x=0.45,y=-1.1,"B", cex=textCex+0.1)
+  text(x=0.45,y=-1.1,"b", cex=textCex+0.1)
     for(i in  1:length(sites)){
       points(log(b1.iso)~log(HOM), data=TaperSample[TaperSample$Site==sites[i],],
              col=site.cols[site.cols$site==sites[i],"col"], pch=20)
     }
-    taperHOMlm <- lmer(log(b1.iso)~log(HOM) + (1|Site) + (1|Family), data = TaperSample)
+    taperHOMlm <- lme4::lmer(log(b1.iso)~log(HOM) + (1|Site), data = TaperSample)
     abline(a=summary(taperHOMlm)$coefficients[1,1], b=summary(taperHOMlm)$coefficients[2,1])
     
     plot(log(b1.iso)~log(WSG), data=TaperSample, type='n',
@@ -63,12 +63,12 @@
          xlab=NA, ylab=NA,yaxt='n',
          cex.axis=cexAx)
     mtext("log WSG (cm)", side=1, line=2.2, cex=axisSize)
-    text(x=-1.25,y=-1.1,"C", cex=textCex+0.1)
+    text(x=-1.25,y=-1.1,"c", cex=textCex+0.1)
     for(i in 1:length(sites)){
       points(log(b1.iso)~log(WSG), data=TaperSample[TaperSample$Site==sites[i],],
              col=site.cols[site.cols$site==sites[i],"col"], pch=20)
     }
-    taperWSGlm <- lmer(log(b1.iso)~log(WSG) + (1|Site) + (1|Family), data = TaperSample)
+    taperWSGlm <- lme4::lmer(log(b1.iso)~log(WSG) + (1|Site), data = TaperSample)
     abline(a=summary(taperWSGlm)$coefficients[1,1], b=summary(taperWSGlm)$coefficients[2,1])
     
     par(xpd=NA)
@@ -91,9 +91,9 @@
   textCex <- 1
   ptSize <- 0.8
   
-  tiff(file="Figure3_MeasHtChangesOverTime.tiff",width=3,height=6, units="in", res=300)
+  tiff(file="Figure3_MeasHtChangesOverTime.tiff",width=3,height=6, units="in", res=300, family = "sans")
 
-    par(mfrow=c(3,1), mar=c(2,6,1,1),oma=c(4,1,1,0), family="serif", xpd=F, las=1)
+    par(mfrow=c(3,1), mar=c(1,6,1,1),oma=c(2,1,0,0), family="sans", xpd=F, las=1)
     
     plot(x=HOM.results$Year, y=HOM.results$Prop*100,
          type='n',
@@ -101,8 +101,8 @@
          xlab=NA,
          xaxt = "n",
          cex.axis=cexAx)
-    mtext("% of \nstems", side=2, line=5.5, cex=axisSize, adj=0)
-    text(x=1990.5,y=97,"A", cex=textCex+0.1)
+    mtext("% of \nstems", side=2, line=6.8, cex=axisSize, adj=0)
+    text(x=1990.5,y=97,"a", cex=textCex+0.3)
     
     for(i in 1:length(sites)){
         points(x=HOM.results[HOM.results$Site==sites[i],"Year"],
@@ -123,8 +123,8 @@
          xlab=NA,
          xaxt = "n",
          cex.axis=cexAx)
-    mtext("% of \nbasal area", side=2, line=6.5, cex=axisSize, adj=0)
-    text(x=1990.5,y=97,"B", cex=textCex+0.1)
+    mtext("% of \nbasal \narea", side=2, line=6.8, cex=axisSize, adj=0)
+    text(x=1990.5,y=97,"b", cex=textCex+0.3)
     for(i in 1:length(sites)){
         points(x=HOM.results[HOM.results$Site==sites[i],"Year"],
                y=HOM.results[HOM.results$Site==sites[i],"PropBA"]*100, pch=19, col=site.cols[site.cols$site==sites[i],"col"], cex=ptSize)
@@ -138,8 +138,8 @@
          xlab=NA,
          cex.axis=cexAx)
     mtext("Census year", side=1, line=2, cex=axisSize)
-    mtext("Average \nHOM (m)", side=2, line=6.5, cex=axisSize, adj=0)
-    text(x=1990.5,y=3.15,"C", cex=textCex+0.1)
+    mtext("Average \nHOM (m)", side=2, line=6.8, cex=axisSize, adj=0)
+    text(x=1990.5,y=3.15,"c", cex=textCex+0.3)
     for(i in 1:length(sites)){
         points(x=HOM.results[HOM.results$Site==sites[i],"Year"],
                y=HOM.results[HOM.results$Site==sites[i],"MeanHOM"], pch=19, col=site.cols[site.cols$site==sites[i],"col"], cex=ptSize)

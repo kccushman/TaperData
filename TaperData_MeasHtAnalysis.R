@@ -574,14 +574,17 @@
       }
   
   # Using the most recent census from each plot
-  HOM.list = list(AMA.cens[[2]][!duplicated(AMA.cens[[2]]$StemID),"hom"], BCI.cens[[6]][!duplicated(BCI.cens[[6]]$StemID),"hom"], 
-                  BKT.cens[[1]][!duplicated(BKT.cens[[1]]$StemID),"hom"], HKK.cens[[4]][!duplicated(HKK.cens[[4]]$StemID),"hom"],
-                  KCH.cens[[3]][!duplicated(KCH.cens[[3]]$StemID),"hom"])
-  KW.HOM.test = kruskal.test(HOM.list)
   
-  HOM.list2 = list(AMA.cens[[2]][!duplicated(AMA.cens[[2]]$StemID),"hom"], BCI.cens[[6]][!duplicated(BCI.cens[[6]]$StemID),"hom"], 
-                   HKK.cens[[4]][!duplicated(HKK.cens[[4]]$StemID),"hom"],KCH.cens[[3]][!duplicated(KCH.cens[[3]]$StemID),"hom"])
-  KW.HOM.test2 = kruskal.test(HOM.list2)
+    # With Bukit Timah (different minimum tree censused)            
+    HOM.list = list(AMA.cens[[2]][!duplicated(AMA.cens[[2]]$StemID),"hom"], BCI.cens[[6]][!duplicated(BCI.cens[[6]]$StemID),"hom"], 
+                    BKT.cens[[1]][!duplicated(BKT.cens[[1]]$StemID),"hom"], HKK.cens[[4]][!duplicated(HKK.cens[[4]]$StemID),"hom"],
+                    KCH.cens[[3]][!duplicated(KCH.cens[[3]]$StemID),"hom"])
+    KW.HOM.test = kruskal.test(HOM.list)
+    
+    # Without Bukit Timah
+    HOM.list2 = list(AMA.cens[[2]][!duplicated(AMA.cens[[2]]$StemID),"hom"], BCI.cens[[6]][!duplicated(BCI.cens[[6]]$StemID),"hom"], 
+                     HKK.cens[[4]][!duplicated(HKK.cens[[4]]$StemID),"hom"],KCH.cens[[3]][!duplicated(KCH.cens[[3]]$StemID),"hom"])
+    KW.HOM.test2 = kruskal.test(HOM.list2)
   
 
 # Test for differnces over time within plots
