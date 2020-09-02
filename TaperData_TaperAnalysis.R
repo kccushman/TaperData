@@ -444,10 +444,15 @@ TaperSample <- read.csv("DataFile_TaperParameterSample.csv")
     ModelResults <- ModelCompare[,c("Description","Df","AIC","R2marginal","R2conditional")]
     ModelResults <- ModelResults[order(ModelResults$AIC),]
     ModelResults$dAIC <- ModelResults$AIC-min(ModelResults$AIC)
+    
+    
+#### 4. Save files ####    
     write.csv(ModelResults, file="Table2_TaperMixedModelComparison.csv",
               row.names = F)
     write.csv(TaperSample, file="DataFile_TaperParameterSample.csv",
               row.names = F)
+    write.csv(TreeSample, file="DataFile_AllTaperEstimates.csv",
+          row.names = F)
 
   # Verify that residuals of best model don't vary by site using a 1-way ANOVA
     ModelResiduals <- data.frame(residual = residuals(model3a),
