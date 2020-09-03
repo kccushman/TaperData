@@ -551,8 +551,78 @@
 
       # Write a .csv file with these results to make a figure
         write.csv(HOM.results, file = "Data file_HOMresultsPerPlot.csv", row.names = F)
+
+#### 4. Repeat HOM analysis but only using stems greater than 30 cm DBH (comparable across plots) ####
+  # Make new lists of data greater than 30 cm
+      AMA.cens30 <- AMA.cens
+      for(i in 1:length(AMA.cens)){
+        AMA.cens30[[i]] <- AMA.cens[[i]][AMA.cens[[i]]$dbh >= 30,]
+      }
+      BCI.cens30 <- BCI.cens
+      for(i in 1:length(BCI.cens)){
+        BCI.cens30[[i]] <- BCI.cens[[i]][BCI.cens[[i]]$dbh >= 30,]
+      }
+      BKT.cens30 <- BKT.cens
+      for(i in 1:length(BKT.cens)){
+        BKT.cens30[[i]] <- BKT.cens[[i]][BKT.cens[[i]]$dbh >= 30,]
+      }
+      HKK.cens30 <- HKK.cens
+      for(i in 1:length(HKK.cens)){
+        HKK.cens30[[i]] <- HKK.cens[[i]][HKK.cens[[i]]$dbh >= 30,]
+      }
+      KCH.cens30 <- KCH.cens
+      for(i in 1:length(KCH.cens)){
+        KCH.cens30[[i]] <- KCH.cens[[i]][KCH.cens[[i]]$dbh >= 30,]
+      }
+       
+    # Use function to calculate proportion of stems and basal area measured at non-standard heights for each plot
+      HOM30.AMA <- NonStdProp(CensusData=AMA.cens30); HOM30.AMA$Site <- "AMA"
+      HOM30.BCI <- NonStdProp(CensusData=BCI.cens30); HOM30.BCI$Site <- "BCI"
+      HOM30.BKT <- NonStdProp(CensusData=BKT.cens30); HOM30.BKT$Site <- "BKT"
+      HOM30.HKK <- NonStdProp(CensusData=HKK.cens30); HOM30.HKK$Site <- "HKK"
+      HOM30.KCH <- NonStdProp(CensusData=KCH.cens30); HOM30.KCH$Site <- "KCH"
+      
+    # Calculate the biomass-weighted mean HOM for each plot and year
+      HOM30.AMA$MeanHOM <- NA
+      for(i in 1:length(AMA.cens30)){
+        HOM30.AMA$MeanHOM[i] <- weighted.mean(x = AMA.cens30[[i]]$hom, w = AMA.cens30[[i]]$AGB)
+      }
+      HOM30.BCI$MeanHOM <- NA
+      for(i in 1:length(BCI.cens30)){
+        HOM30.BCI$MeanHOM[i] <- weighted.mean(x = BCI.cens30[[i]]$hom, w = BCI.cens30[[i]]$AGB)
+      }
+      HOM30.BKT$MeanHOM <- NA
+      for(i in 1:length(BKT.cens30)){
+        HOM30.BKT$MeanHOM[i] <- weighted.mean(x = BKT.cens30[[i]]$hom, w = BKT.cens30[[i]]$AGB)
+      }
+      HOM30.HKK$MeanHOM <- NA
+      for(i in 1:length(HKK.cens30)){
+        HOM30.HKK$MeanHOM[i] <- weighted.mean(x = HKK.cens30[[i]]$hom, w = HKK.cens30[[i]]$AGB)
+      }
+      HOM30.KCH$MeanHOM <- NA
+      for(i in 1:length(KCH.cens30)){
+        HOM30.KCH$MeanHOM[i] <- weighted.mean(x = KCH.cens30[[i]]$hom, w = KCH.cens30[[i]]$AGB)
+      }
+      
+    # Combine into a single data frame
+      HOM30.results <- rbind(HOM30.AMA,HOM30.BCI,HOM30.BKT,HOM30.HKK,HOM30.KCH)
+      
+     # Add actual census years for each site
+      HOM30.results$Year <- NA
+        # Amacayacu
+        HOM30.results[HOM30.results$Site=="AMA","Year"] <- c(2007,2013)
+        # Barro Colorado
+        HOM30.results[HOM30.results$Site=="BCI","Year"] <- c(1990,1995,2000,2005,2010,2015)
+        # Bukit Timah
+        HOM30.results[HOM30.results$Site=="BKT","Year"] <- c(2006)
+        # Huai Kha Khaeng
+        HOM30.results[HOM30.results$Site=="HKK","Year"] <- c(1994,1999,2004,2009)
+        # Khao Chong
+        HOM30.results[HOM30.results$Site=="KCH","Year"] <- c(2000,2005,2010)
         
-#### 4. Statistical tests for HOM variation among plots and over time ####
+      # Write a .csv file with these results to make a figure
+        write.csv(HOM30.results, file = "Data file_HOMresultsPerPlot30.csv", row.names = F)
+#### 5. Statistical tests for HOM variation among plots and over time ####
 
   # Kruskal - Wallis test for differences among distributions of measurement heights among plots
 
@@ -609,7 +679,59 @@
   KCH.HOM.test <- kruskal.test(list(KCH.cens[[1]][!duplicated(KCH.cens[[1]]$StemID),"hom"],KCH.cens[[2]][!duplicated(KCH.cens[[2]]$StemID),"hom"],
                                     KCH.cens[[3]][!duplicated(KCH.cens[[3]]$StemID),"hom"]))
   
+#### 6. Statistical tests for HOM variation among plots and over time only using stems greater than 30 cm DBH ####
+
+  # Kruskal - Wallis test for differences among distributions of measurement heights among plots
+
+  # Order census data by StemID and then by HOM (decreasing)
+      for(i in 1:length(AMA.cens30)){
+        AMA.cens30[[i]] <- AMA.cens30[[i]][order(AMA.cens30[[i]]$StemID,-AMA.cens30[[i]]$hom),]
+      }
+      for(i in 1:length(BCI.cens30)){
+        BCI.cens30[[i]] <- BCI.cens30[[i]][order(BCI.cens30[[i]]$StemID,-BCI.cens30[[i]]$hom),]
+      }
+      for(i in 1:length(BKT.cens30)){
+        BKT.cens30[[i]] <- BKT.cens30[[i]][order(BKT.cens30[[i]]$StemID,-BKT.cens30[[i]]$hom),]
+      }
+      for(i in 1:length(HKK.cens30)){
+        HKK.cens30[[i]] <- HKK.cens30[[i]][order(HKK.cens30[[i]]$StemID,-HKK.cens30[[i]]$hom),]
+      }
+      for(i in 1:length(KCH.cens30)){
+        KCH.cens30[[i]] <- KCH.cens30[[i]][order(KCH.cens30[[i]]$StemID,-KCH.cens30[[i]]$hom),]
+      }
+  
+  # Using the most recent census from each plot
+  
+    # With Bukit Timah (different minimum tree censused)            
+    HOM.list = list(AMA.cens30[[2]][!duplicated(AMA.cens30[[2]]$StemID),"hom"], BCI.cens30[[6]][!duplicated(BCI.cens30[[6]]$StemID),"hom"], 
+                    BKT.cens30[[1]][!duplicated(BKT.cens30[[1]]$StemID),"hom"], HKK.cens30[[4]][!duplicated(HKK.cens30[[4]]$StemID),"hom"],
+                    KCH.cens30[[3]][!duplicated(KCH.cens30[[3]]$StemID),"hom"])
+    KW.HOM.test = kruskal.test(HOM.list)
 
 
-    
+# Test for differnces over time within plots
+
+  ## AMA
+  #Kruskal-Wallis test
+  AMA.HOM.test <- kruskal.test(list(AMA.cens30[[1]][!duplicated(AMA.cens30[[1]]$StemID),"hom"],AMA.cens30[[2]][!duplicated(AMA.cens30[[2]]$StemID),"hom"]))
+ 
+  ## BCI
+  #Kruskal-Wallis test
+  BCI.HOM.test <- kruskal.test(list(BCI.cens30[[2]][!duplicated(BCI.cens30[[2]]$StemID),"hom"],
+                                    BCI.cens30[[3]][!duplicated(BCI.cens30[[3]]$StemID),"hom"],BCI.cens30[[4]][!duplicated(BCI.cens30[[4]]$StemID),"hom"],
+                                    BCI.cens30[[5]][!duplicated(BCI.cens30[[5]]$StemID),"hom"],BCI.cens30[[6]][!duplicated(BCI.cens30[[6]]$StemID),"hom"]))
+  
+  ## HKK
+  #Kruskal-Wallis test
+  HKK.HOM.test <- kruskal.test(list(HKK.cens30[[1]][!duplicated(HKK.cens30[[1]]$StemID),"hom"],HKK.cens30[[2]][!duplicated(HKK.cens30[[2]]$StemID),"hom"],
+                                    HKK.cens30[[3]][!duplicated(HKK.cens30[[3]]$StemID),"hom"],HKK.cens30[[4]][!duplicated(HKK.cens30[[4]]$StemID),"hom"]))
+  
+  ## KCH
+  #Kruskal-Wallis test
+  KCH.HOM.test <- kruskal.test(list(KCH.cens30[[1]][!duplicated(KCH.cens30[[1]]$StemID),"hom"],KCH.cens30[[2]][!duplicated(KCH.cens30[[2]]$StemID),"hom"],
+                                    KCH.cens30[[3]][!duplicated(KCH.cens30[[3]]$StemID),"hom"]))
+  
+#### 7. Save formatted census data ####
 save(AMA.cens,BCI.cens,BKT.cens,HKK.cens,KCH.cens,file="ForestGEO_CensusData.RData")
+
+
