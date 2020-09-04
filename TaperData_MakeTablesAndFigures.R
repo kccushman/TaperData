@@ -198,34 +198,3 @@
     summary(lm(b1 ~ MAP))
     summary(lm(b1 ~ DSL))
     
-#### Figure S: ####    
-    
-
-  PropStems <- c(0.5512590, 0.5677175, 0.2314316, 0.1071939, 0.6266549)
-  PropBA <- c(0.6104313, 0.7050572, 0.2970426, 0.1605881,  0.7186443)
-  MeanHOM <- c(2.554515, 3.658446, 1.664472, 1.541162, 3.012815)
-  
-  plot(PropBA~MAP, pch =20)
-  plot(PropBA~DSL, pch =20)
-  plot(PropBA~Lat, pch =20)
-  
-  summary(lm(PropBA~MAP))  
-  summary(lm(PropBA~DSL))  
-  summary(lm(PropBA~Lat)) 
-  
-  plot(PropStems~MAP, pch =20)
-  plot(PropStems~DSL, pch =20)
-  plot(PropStems~Lat, pch =20)
-  
-  summary(lm(PropStems~MAP))  
-  summary(lm(PropStems~DSL)) 
-  summary(lm(PropStems~Lat)) 
-  
-  plot(MeanHOM~MAP, pch =20)
-  plot(MeanHOM~DSL, pch =20)
-  plot(MeanHOM~Lat, pch =20)
-  
-  summary(lm(MeanHOM~MAP))  
-  summary(lm(MeanHOM~DSL)) 
-  summary(lm(MeanHOM~Lat))
-  

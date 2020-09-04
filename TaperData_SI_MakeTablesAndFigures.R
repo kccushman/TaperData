@@ -1,0 +1,572 @@
+library(lme4)
+library(MuMIn)
+library(mcr)
+library(Hmisc)
+
+###### Load data ######
+  # Tree sample and taper parameter information for trees with 3-D models
+    TaperSample <- read.csv("DataFile_TaperParameterSample.csv")
+    contours <- read.csv("ContourData.csv")
+    TreeSample <- read.csv("DataFile_AllTaperEstimates.csv")
+  # Data for trees measured with optical dendrometer and DBH tape
+    dbh.tape.data <- read.csv("~/Desktop/Taper/Current/TaperCorrection/DBH.tape.data.csv")
+    optical.data <- read.csv("~/Desktop/Taper/Current/TaperCorrection/Optical.dendro.data.csv")
+  # Plot data
+    load("ForestGEO_CensusData.RData")
+
+# Define plot names and colors
+  sites <- c("AMA","BCI","BKT","HKK","KCH")
+  
+  sitesNames <- c("Amacayacu",
+                  "Barro Colorado",
+                  "Bukit Timah",
+                  "Huai Kha Khaeng",
+                  "Khao Chong")
+  
+  site.cols <- data.frame(site=sites,
+                          col= c("#efa7a7", # salmon
+                                 "#000000", # black
+                                 "#158baf", # bright blue"
+                                 "#bf0f0f", # cardinal
+                                 "#3ead82")) # teal
+  
+  site.cols$col <- as.character(site.cols$col)
+        
+###### Table S5:Random intercept values for family and site #####
+  
+  # Best taper models from model comparison 
+  
+  # Model 1 (no family effects)
+    model3a <- lme4::lmer(log(b1.iso)~log(DBH) + log(HOM) + log(WSG) + (1|Site), data = TaperSample)
+    
+    SiteCoefs1 <- data.frame(Group=c(rownames(coef(model3a)[[1]])),
+                             Intercept=c(coef(model3a)[[1]][,1]))
+  
+  # Model 2 (with family effects)
+    model3a.f <- lme4::lmer(log(b1.iso)~log(DBH) + log(HOM) + log(WSG) + (1|Site) + (1|Family), data = TaperSample)
+    
+    FamilyCoefs2 <- data.frame(Group=c(rownames(coef(model3a.f)[[1]])),
+                               Intercept=c(coef(model3a.f)[[1]][,1]))
+    SiteCoefs2 <- data.frame(Group=c(rownames(coef(model3a.f)[[2]])),
+                             Intercept=c(coef(model3a.f)[[2]][,1]))
+    
+    write.csv(rbind(SiteCoefs1,FamilyCoefs2,SiteCoefs2), row.names = F, file="TableS5_RandomIntercepts.csv")
+
+###### Table S7:Circularity values by family #####
+  # Make a data frame with trees with circularity measurement at the HOM
+  CircSample <- TreeSample[!is.na(TreeSample$iso),]
+  # Aggregate - mean circularity by family
+  FamilyCirc <- aggregate(CircSample$iso, by=list(CircSample$Family), FUN="mean")
+  # Aggregate - SD circularity by family  
+  FamilyCircSD <- aggregate(CircSample$iso, by=list(CircSample$Family), FUN="sd")
+  # Aggregate - total sample size by family  
+  FamilyCircCount <- aggregate(CircSample$iso, by=list(CircSample$Family), FUN="length")
+  
+  # Put results into data frame
+  CircTable <- data.frame(Family=FamilyCirc$Group.1, 
+                          Circularity=paste(round(FamilyCirc$x,2)," (",round(FamilyCircSD$x,2),")", sep=""),
+                          SampleSize=FamilyCircCount$x,
+                          SampleAMA=NA,
+                          SampleBCI=NA,
+                          SampleBKT=NA,
+                          SampleHKK=NA,
+                          SampleKCH=NA)
+  # Sort by sample size
+  CircTable <- CircTable[order(-CircTable$SampleSize),]
+  
+  # Find the sample size per plot
+  for(i in 1:length(CircTable$Family)){
+    CircTable[i,"SampleAMA"] <- length(CircSample[CircSample$Family==CircTable$Family[i] & CircSample$Site=="AMA","Tag"])
+    CircTable[i,"SampleBCI"] <- length(CircSample[CircSample$Family==CircTable$Family[i] & CircSample$Site=="BCI","Tag"])
+    CircTable[i,"SampleBKT"] <- length(CircSample[CircSample$Family==CircTable$Family[i] & CircSample$Site=="BKT","Tag"])
+    CircTable[i,"SampleHKK"] <- length(CircSample[CircSample$Family==CircTable$Family[i] & CircSample$Site=="HKK","Tag"])
+    CircTable[i,"SampleKCH"] <- length(CircSample[CircSample$Family==CircTable$Family[i] & CircSample$Site=="KCH","Tag"])
+  }
+  
+  write.csv(CircTable, file="Table S7_Circularity by family.csv", row.names = F)  
+  
+
+###### Table S8:HOM variation by family #####
+  RecentHOM <- rbind(AMA.cens[[2]][!duplicated(AMA.cens[[2]]$StemID),c("Family", "Site","hom","dbh")], BCI.cens[[6]][!duplicated(BCI.cens[[6]]$StemID),c("Family", "Site","hom","dbh")], 
+                     BKT.cens[[1]][!duplicated(BKT.cens[[1]]$StemID),c("Family", "Site","hom","dbh")], HKK.cens[[4]][!duplicated(HKK.cens[[4]]$StemID),c("Family", "Site","hom","dbh")],
+                     KCH.cens[[3]][!duplicated(KCH.cens[[3]]$StemID),c("Family", "Site","hom","dbh")])
+  
+  RecentHOM[is.na(RecentHOM$Family),"Family"] <- "Unknown"
+  
+  FamilyHOM <- aggregate(RecentHOM$hom, by=list(RecentHOM$Family), FUN="mean")
+  FamilyHOMSD <- aggregate(RecentHOM$hom, by=list(RecentHOM$Family), FUN="sd")
+  FamilyHOMCount <- aggregate(RecentHOM$hom, by=list(RecentHOM$Family), FUN="length")
+  
+  # Put results into data frame
+  HOMTable <- data.frame(Family=FamilyHOM$Group.1, 
+                         HOM=paste(round(FamilyHOM$x,2)," (",round(FamilyHOMSD$x,2),")", sep=""),
+                         SampleSize=FamilyHOMCount$x,
+                         SampleAMA=NA,
+                         SampleBCI=NA,
+                         SampleBKT=NA,
+                         SampleHKK=NA,
+                         SampleKCH=NA)
+  
+  # Sort by sample size
+  HOMTable <- HOMTable[order(-HOMTable$SampleSize),]
+  
+  # Find the sample size per plot
+  for(i in 1:length(HOMTable$Family)){
+    HOMTable[i,"SampleAMA"] <- length(RecentHOM[RecentHOM$Family==HOMTable$Family[i] & RecentHOM$Site=="AMA","dbh"])
+    HOMTable[i,"SampleBCI"] <- length(RecentHOM[RecentHOM$Family==HOMTable$Family[i] & RecentHOM$Site=="BCI","dbh"])
+    HOMTable[i,"SampleBKT"] <- length(RecentHOM[RecentHOM$Family==HOMTable$Family[i] & RecentHOM$Site=="BKT","dbh"])
+    HOMTable[i,"SampleHKK"] <- length(RecentHOM[RecentHOM$Family==HOMTable$Family[i] & RecentHOM$Site=="HKK","dbh"])
+    HOMTable[i,"SampleKCH"] <- length(RecentHOM[RecentHOM$Family==HOMTable$Family[i] & RecentHOM$Site=="KCH","dbh"])
+  }
+  
+  # Keep families with at least 10 individuals
+  HOMTable10 <- HOMTable[HOMTable$SampleSize>=10,]
+  
+  # Write table to .csv
+  write.csv(HOMTable10, file="TableS8_MeasHtByFamily.csv", row.names = F)
+
+###### Figure S1: Taper parameter variation with height #####
+  range.lm <- lm(b1.iso~range.iso, data=TaperSample)
+  summary(range.lm)
+  newx <- seq(min(TaperSample$range.iso), max(TaperSample$range.iso), length.out=100)
+  preds <- predict(range.lm, newdata = data.frame(range.iso=newx), 
+                   interval = 'confidence')
+  
+  tiff(width=5, height=5, file="Figure S1_Taper vs measurement height range.tiff",res=300,units="in")
+    par(family="serif")
+    plot(b1.iso~range.iso, data=TaperSample,
+         pch=20,
+         xlab=NA,
+         ylab=NA)
+    mtext("Range of measurement heights (m)", side=1, line=2)
+    mtext("Taper parameter", side=2, line=2)
+    abline(range.lm, lwd=2)
+    lines(newx, preds[ ,3], lty = 'dashed', col = 'red', lwd=2)
+    lines(newx, preds[ ,2], lty = 'dashed', col = 'red', lwd=2)
+    legend(x=2.5, y=-0.02,
+           c("Regression line", "95% CI"),
+           lwd=2,
+           col=c("black","red"),
+           lty=c(1,2),
+           bty='n')
+  dev.off()
+  
+  
+###### Figure S2: Taper parameter variation including measurements below the HOM ##### 
+  IsoCompare <- TaperSample[TaperSample$range.hom>= 1.4 & !(TaperSample$range.hom==TaperSample$range.iso),]
+  # Use a Deming regression
+    IsoReg=mcreg(IsoCompare$b1.iso,IsoCompare$b1.hom,method.reg="Deming",error.ratio=1,method.ci="analytical")
+    getCoefficients(IsoReg)
+    
+    newx <- seq(min(IsoCompare$b1.iso), max(IsoCompare$b1.iso), length.out=100)
+    preds <- MCResultAnalytical.calcResponse(IsoReg, x.levels = newx, alpha=0.05)
+    
+  tiff(width=5, height=5, file="Figure S2_Taper variation below HOM.tiff",res=300,units="in")
+    par(family="serif")
+    plot(b1.hom~b1.iso, data=IsoCompare,
+         pch=20,
+         xlab=NA,
+         ylab=NA)
+    abline(a=getCoefficients(IsoReg)[1,1],b=getCoefficients(IsoReg)[2,1],lwd=2)
+    lines(x=preds[,1],y=preds[,4],lwd=2,lty=2)
+    lines(x=preds[,1],y=preds[,5],lwd=2,lty=2)
+    abline(a=0,b=1,col="red",lwd=2,lty=2)
+    mtext("Taper parameter - with measurements below HOM", side=1, line=2)
+    mtext("Taper parameter - without measurements below HOM", side=2, line=2)
+    legend(x=0.06, y=0.01,
+           c("Regression line", "95% CI","1-1 line"),
+           lwd=2,
+           col=c("black","black","red"),
+           lty=c(1,2,2),
+           bty='n')
+  dev.off()
+
+###### Figure S3: Optical dendrometer vs. 3-D model histograms #####
+  
+  # Calculate taper values for trees using optical dendrometer data
+  TaperSample$b1.opt <- NA
+  
+  # define taper equation
+    Eqn1 <- function(h,DBH,b1) {DBH*exp(-b1*(h-1.3))}
+    Lk1 <- function(par,h,d) {
+      sigma <- par[1]
+      DBH   <- par[2]
+      b1    <- par[3]
+      res   <- Eqn1(h,DBH,b1)-d
+      neglk <- -sum(dnorm(res,sd = sigma,log=T))
+      return(neglk)
+    }
+    Fit.Eqn1= function(par,h,d) {
+      return(optim(par,Lk1,h=h,d=d))
+    }
+    
+  optical.trees <- unique(as.character(optical.data$tag[optical.data$tag %in% TaperSample$Tag]))
+  for(i in 1:length(optical.trees)){
+    #select 3-D data for each tree and re-create subset used to fit taper function
+    three.d.i <- contours[contours$Tag==optical.trees[i] & contours$Site=="BCI",]
+    info.i <- TreeSample[TreeSample$Tag==optical.trees[i] & TreeSample$Site=="BCI",]
+    tree.hom <- three.d.i[three.d.i$ht > (info.i$HOM[1]),]
+    hom.iso <-  mean(tree.hom$iso.quo)
+    tree.iso <-three.d.i[(three.d.i$ht > info.i$HOM | three.d.i$iso.quo >= hom.iso) & three.d.i$ht <= info.i$HOM + 3.6,]
+    
+    #select optical data for the same range of heights
+    opt.i <- optical.data[optical.data$tag==optical.trees[i] & optical.data$ht >= range(tree.iso$ht)[1] & optical.data$ht <= range(tree.iso$ht)[2],]
+    
+    results.opt <- ifelse(length(opt.i$ht)==0,NA,
+                          Fit.Eqn1(
+                            par=c(sigma=1,DBH=info.i$DBH[1]/10,b1=0.05),
+                            h=opt.i$ht, d=opt.i$diam))
+    
+    TaperSample[TaperSample$Tag==optical.trees[i],"b1.opt"] <- ifelse(is.na(results.opt), NA,
+                                                                      results.opt[[1]][3])
+  }
+  
+  tiff(width=7, height=4, file="Figure S3_Histograms of taper methods.tiff",res=300,units="in")
+    par(mfrow=c(1,2), family="serif")
+    b1.breaks <- seq(0,0.12,0.02)
+    
+    histA <- hist(TaperSample[TaperSample$b1.opt>=0 & TaperSample$b1.iso>=0,'b1.opt'],
+                  breaks=b1.breaks,
+                  xlab = NA,
+                  main = 'Optical dendrometer',
+                  col="black",border="white")
+    densityA <- density(TaperSample[TaperSample$b1.opt>=0 & TaperSample$b1.iso>=0 & !is.na(TaperSample$b1.opt),'b1.opt'])
+    lines(x=densityA$x,y=densityA$y/(max(densityA$y))*max(histA$counts),lwd=2, col="red")
+    
+    histB <- hist(TaperSample[TaperSample$b1.opt>=0 & TaperSample$b1.iso>=0,'b1.iso'],
+                  breaks=b1.breaks,
+                  xlab = NA,
+                  main = '3-D model',
+                  col="black",border="white")
+    densityB <- density(TaperSample[TaperSample$b1.opt>=0 & TaperSample$b1.iso>=0 & !is.na(TaperSample$b1.opt),'b1.iso'])
+    lines(x=densityB$x,y=densityB$y/(max(densityB$y))*max(histB$counts),lwd=2, col="red")
+    
+    mtext('Taper parameter value', side=1, outer=T, line=-2)
+  dev.off()
+  
+  tapermethod.ttest <- t.test(TaperSample[TaperSample$b1.opt>=0 & TaperSample$b1.iso>=0,'b1.opt'],
+                              TaperSample[TaperSample$b1.opt>=0 & TaperSample$b1.iso>=0,'b1.iso'],
+                              paired=T)
+  
+###### Figure S4: Optical dendrometer taper vs. 3-D model taper #####
+  
+  TaperCompare <- TaperSample[TaperSample$b1.opt>=0 & TaperSample$b1.iso>=0 & !is.na(TaperSample$b1.opt),]
+  # Use a Deming regression
+  OptReg=mcreg(TaperCompare$b1.iso,TaperCompare$b1.opt,method.reg="Deming",error.ratio=1,method.ci="analytical")
+  getCoefficients(OptReg)
+  
+  newx <- seq(min(TaperCompare$b1.iso), max(TaperCompare$b1.iso), length.out=100)
+  preds <- MCResultAnalytical.calcResponse(OptReg, x.levels = newx, alpha=0.05)
+  
+  tiff(width=5, height=5, file="Figure S4_Optical dendrometer vs 3-D model.tiff",res=300,units="in")
+    par(family="serif")
+    plot(b1.opt~b1.iso, data=TaperCompare,
+         pch=20,
+         xlab=NA,
+         ylab=NA, 
+         ylim=range(TaperCompare$b1.opt)+c(-0.015,0))
+     abline(a=getCoefficients(OptReg)[1,1],b=getCoefficients(OptReg)[2,1],lwd=2)
+    # lines(x=preds[,1],y=preds[,4],lwd=2,lty=2)
+    # lines(x=preds[,1],y=preds[,5],lwd=2,lty=2)
+    abline(a=0,b=1,col="red",lwd=2,lty=2)
+    mtext("3-D model taper parameter", side=1, line=2)
+    mtext("Optical dendrometer taper parameter", side=2, line=2)
+     legend(x=0.035, y=0.005,
+            c("Regression line","1-1 line"),
+            lwd=2,
+            col=c("black","red"),
+            lty=c(1,2),
+            bty='n')
+  dev.off()
+  
+###### Figure S5: Individual trees, optical dendromter vs. tape vs. 3-D model #####
+  dbh.tape.trees <- unique(dbh.tape.data$tag)
+  dbh.tape.trees <- dbh.tape.trees[dbh.tape.trees %in% contours[contours$Site=="BCI",'Tag']]
+  
+  tiff(width=8, height=9, file="Figure S5_Optical dendrometer vs 3-D model individuals.tiff",res=300,units="in")
+    par(mfrow=c(3,3),family="serif",mar=c(3,3,1,1),oma=c(2,2,1,1))
+    
+    for(i in 1:length(dbh.tape.trees)){
+      dbh.tape.i <- dbh.tape.data[dbh.tape.data$tag==dbh.tape.trees[i],]
+      three.d.i <- contours[contours$Site=="BCI" & contours$Tag==dbh.tape.trees[i],]
+        three.d.i$d <- three.d.i$d*100 # convert from meters to cm
+      optical.i <- optical.data[optical.data$tag==dbh.tape.trees[i],]
+      
+      xlims <- range(c(dbh.tape.i$taped,three.d.i$d.area,optical.i$diam),na.rm=T)
+      ylims <- range(c(dbh.tape.i$ht,three.d.i$ht,optical.i$ht),na.rm=T)
+      
+      plot(ht~taped, data=dbh.tape.i, type="n",
+           xlab=NA,
+           ylab=NA,
+           xlim=xlims,ylim=ylims,
+           cex.axis=1.5)
+      points(ht~taped, data=dbh.tape.i, pch=3, col=adjustcolor(alpha.f=0.8, "black"))
+      points(ht~diam, data=optical.i, pch=4, col=adjustcolor(alpha.f=0.8, "red"))
+      points(ht~d, data=three.d.i, pch=19, col=adjustcolor(alpha.f=0.6, "blue"))
+    }
+    par(xpd=T)
+    plot(x=0,y=0,type="n",bty="n",
+         xlim=c(0,10),ylim=c(0,10),
+         xaxt="n",yaxt="n",xlab="",ylab="")
+    legend(x=0,y=10,
+           c('3-D Model','Diameter tape','Optical dendrometer'),
+           pch=c(19,3,4),cex=1.5,
+           col=c(adjustcolor(alpha.f=0.6, "blue"),adjustcolor(alpha.f=0.8, "black"),adjustcolor(alpha.f=0.8, "red")), bty='n')
+    
+    mtext("Diameter measurement (cm)", side=1, line=0.5, outer=T, cex=1.5)
+    mtext("Measurement height (m)", side=2, line=0.5, outer=T, cex=1.5)
+    
+  dev.off()
+  
+###### Figure S6: Distribution of model residuals #####
+  
+  # Read in data file for taper parameter sample and define the taper model used in the biomass estimation routine
+  model3a <- lme4::lmer(log(b1.iso)~log(DBH) + log(HOM) + log(WSG) + (1|Site), data = TaperSample)
+  model3a.f <- lme4::lmer(log(b1.iso)~log(DBH) + log(HOM) + log(WSG) + (1|Site) + (1|Family), data = TaperSample)
+
+tiff(width=7, height=10, file="FigureS6_DistributionOfModelResiduals.tiff",res=300,units="in")
+  par(mfrow=c(4,2),mar=c(4,3,1,1),oma = c(0,1,0,0), family="sans")
+
+  # NO family fixed effects
+  plot(x=fitted(model3a),
+       y=residuals(model3a),
+       xlab=NA, ylab=NA,
+       pch=20, col=adjustcolor("black",alpha.f=0.5),
+       cex=1.2, cex.axis=1.5)
+    mtext("Fitted value", side=1, line=2)
+    mtext("Residual", side=2, line=2)
+    text("a", x=-4.4, y=1.4, cex=1.4)
+  
+  plot(x=model3a@frame$`log(DBH)`,
+       y=residuals(model3a),
+       xlab=NA, ylab= NA,
+       pch=20, col=adjustcolor("black",alpha.f=0.5),
+       cex=1.2, cex.axis=1.5)
+    mtext("log(DAB)", side=1, line=2)
+    text("b", x=3, y=1.4, cex=1.4)
+    
+  plot(x=model3a@frame$`log(HOM)`,
+       y=residuals(model3a),
+       xlab=NA, ylab= NA,
+       pch=20, col=adjustcolor("black",alpha.f=0.5),
+       cex=1.2, cex.axis=1.5)
+    mtext("log(HOM)", side=1, line=2)
+    mtext("Residual", side=2, line=2)
+    text("c", x=0.45, y=1.4, cex=1.4)
+
+  plot(x=model3a@frame$`log(WSG)`,
+       y=residuals(model3a),
+       xlab=NA, ylab= NA,
+       pch=20, col=adjustcolor("black",alpha.f=0.5),
+       cex=1.2, cex.axis=1.5)
+    mtext("log(WSG)", side=1, line=2)
+    text("d", x=-1.3, y=1.4, cex=1.4)
+  
+  # WITH family fixed effects    
+  plot(x=fitted(model3a.f),
+       y=residuals(model3a.f),
+       xlab=NA, ylab=NA,
+       pch=20, col=adjustcolor("black",alpha.f=0.5),
+       cex=1.2, cex.axis=1.5)
+    mtext("Fitted value", side=1, line=2)
+    mtext("Residual", side=2, line=2)
+    text("e", x=-4.4, y=1.4, cex=1.4)
+  
+  plot(x=model3a.f@frame$`log(DBH)`,
+       y=residuals(model3a.f),
+       xlab=NA, ylab= NA,
+       pch=20, col=adjustcolor("black",alpha.f=0.5),
+       cex=1.2, cex.axis=1.5)
+    mtext("log(DAB)", side=1, line=2)
+    text("f", x=3, y=1.4, cex=1.4)
+    
+  plot(x=model3a.f@frame$`log(HOM)`,
+       y=residuals(model3a.f),
+       xlab=NA, ylab= NA,
+       pch=20, col=adjustcolor("black",alpha.f=0.5),
+       cex=1.2, cex.axis=1.5)
+    mtext("log(HOM)", side=1, line=2)
+    mtext("Residual", side=2, line=2)
+    text("g", x=0.45, y=1.4, cex=1.4)
+
+  plot(x=model3a.f@frame$`log(WSG)`,
+       y=residuals(model3a.f),
+       xlab=NA, ylab= NA,
+       pch=20, col=adjustcolor("black",alpha.f=0.5),
+       cex=1.2, cex.axis=1.5)
+    mtext("log(WSG)", side=1, line=2)
+    text("h", x=-1.3, y=1.4, cex=1.4)
+
+dev.off()
+
+###### Figure S7: Trunk circularity for each site #####
+  # Calculate empirical cumulative distribution functions for each plot
+    CircSample <- TreeSample[!is.na(TreeSample$iso),]
+
+    AMA.circCDF <- Ecdf(CircSample[CircSample$Site=='AMA','iso'])
+    BCI.circCDF <- Ecdf(CircSample[CircSample$Site=='BCI','iso'])
+    BKT.circCDF <- Ecdf(CircSample[CircSample$Site=='BKT','iso'])
+    HKK.circCDF <- Ecdf(CircSample[CircSample$Site=='HKK','iso'])
+    KCH.circCDF <- Ecdf(CircSample[CircSample$Site=='KCH','iso'])
+    
+    tiff(width=5, height=5, file="Figure S7_Trunk circularity ECDFs for sites.tiff",res=300,units="in")
+      plot(0,type='n',
+           xlim=range(CircSample$iso),
+           ylim=c(0.01,1),
+           xlab=NA,ylab=NA,
+           log='y')
+      # Plot ECDF for each site
+        lines(AMA.circCDF, col=site.cols[site.cols$site=="Amacayacu","col"], lwd=2)
+        lines(BCI.circCDF, col=site.cols[site.cols$site=="Barro Colorado","col"], lwd=2)
+        lines(BKT.circCDF, col=site.cols[site.cols$site=="Bukit Timah","col"], lwd=2)
+        lines(HKK.circCDF, col=site.cols[site.cols$site=="Huai Kha Khaeng","col"], lwd=2)
+        lines(KCH.circCDF, col=site.cols[site.cols$site=="Khao Chong","col"], lwd=2)
+      abline(h=1,lty=2)
+      abline(h=0.5,lty=1)
+      # Plot vertical line for mean ciruclarity per site
+        abline(v=mean(CircSample[CircSample$Site=='AMA','iso']), col=site.cols[site.cols$site=="AMA","col"])
+        abline(v=mean(CircSample[CircSample$Site=='BCI','iso']), col=site.cols[site.cols$site=="BCI","col"])
+        abline(v=mean(CircSample[CircSample$Site=='BKT','iso']), col=site.cols[site.cols$site=="BKT","col"])
+        abline(v=mean(CircSample[CircSample$Site=='HKK','iso']), col=site.cols[site.cols$site=="HKK","col"])
+        abline(v=mean(CircSample[CircSample$Site=='KCH','iso']), col=site.cols[site.cols$site=="KCH","col"])
+      legend(x=0.3,y=0.5,
+             sitesNames[1:5],
+             col=site.cols$col[1:5],
+             bty='n',
+             lwd=2)
+      mtext("Trunk circularity", side=1, line=2)
+      mtext("Cumulative proportion", side=2, line=2)
+    dev.off()
+    
+    Circ.Test1 <- kruskal.test(list(CircSample[CircSample$Site=='AMA','iso'],
+                                    CircSample[CircSample$Site=='BCI','iso'],
+                                    CircSample[CircSample$Site=='BKT','iso'],
+                                    CircSample[CircSample$Site=='HKK','iso'],
+                                    CircSample[CircSample$Site=='KCH','iso']))
+    Circ.Test2 <- kruskal.test(list(CircSample[CircSample$Site=='AMA','iso'],
+                                    CircSample[CircSample$Site=='BCI','iso'],
+                                    CircSample[CircSample$Site=='HKK','iso'],
+                                    CircSample[CircSample$Site=='KCH','iso']))
+    
+
+###### Figure S8: Trunk circularity for each tree #####
+  contours$Tag <- as.character(contours$Tag) 
+    
+  tiff(width=8, height=6, file="Figure S8_Trunk circularity for individual trees.tiff",res=300,units="in")
+    par(mfrow=c(2,3), family="serif", mar=c(3,3,1,1),oma=c(2,2,1,1))
+    circSites <- unique(CircSample$Site)
+    for(i in 1:length(circSites)){
+      siteTrees <- unique(CircSample[CircSample$Site==circSites[i],"Tag"])
+      colorsi <- rainbow(length(siteTrees))
+      plot(0,type='n',
+           xlim=c(0.01,1),
+           ylim=c(-10,10),
+           xlab=NA,ylab=NA,
+           cex.axis=1.5)
+      mtext(sitesNames[i],side=3, cex=1.2)
+      for(j in 1:length(siteTrees)){
+        treej <- contours[contours$Site==circSites[i] & contours$Tag==siteTrees[j],]
+        infoj <- TreeSample[TreeSample$Site==circSites[i] & TreeSample$Tag==siteTrees[j],]
+        # Calculate height above HOM for each measurements
+          treej$aboveHOM <- treej$ht-infoj$HOM
+        # Add circularity by height above HOM to plot
+          lines(aboveHOM~iso.quo, data=treej, col=colorsi[j])
+      }
+      abline(h=0, col="red", lty=2)
+    }
+    mtext("Circularity", side=1,outer=T, cex=1.5)
+    mtext("Distance from measurement height (m)", side=2,outer=T, cex=1.5)
+  dev.off()
+
+###### Figure S9: HOM variation versus climate and latitude ######
+  
+    # Vector of MAP in site alphabetical order
+    MAP <- c(3200,2600,2500,1500,2800)
+  # Vector of dry season length in site alphabetical order
+    DSL <- c(0,3,0,5,2.5)
+  # Vector of distance from equator
+    Lat <- c(3.8, 9.2, 1.3, 15.4, 7.5)
+    
+  PropStems <- c(0.5512590, 0.5677175, 0.2314316, 0.1071939, 0.6266549)
+  PropBA <- c(0.6104313, 0.7050572, 0.2970426, 0.1605881,  0.7186443)
+  MeanHOM <- c(2.554515, 3.658446, 1.664472, 1.541162, 3.012815)
+  
+  cexpt=2
+  
+tiff(width=8, height=6, file="FigureS9_MeasHtVersusClimate.tiff",res=300,units="in")
+    par(mfrow=c(3,3), family="serif", mar=c(2,2,1,1),oma=c(2,2,1,1))
+    
+    
+  # Proportion of basal area  
+  plot(PropBA~MAP, pch =20,
+       xlab = NA,
+       xaxt="n",
+       ylab = NA,
+       col=site.cols$col, cex=cexpt)
+  mtext("Proportion of basal area", side=2, line=2)
+  plot(PropBA~DSL, pch =20,
+       col=site.cols$col,
+       xlab = NA,
+       xaxt="n",
+       yaxt="n",
+       ylab=NA, cex=cexpt)
+  plot(PropBA~Lat, pch =20,
+       col=site.cols$col,
+       xlab = NA,
+       xaxt="n",
+       yaxt="n",
+       ylab=NA, cex=cexpt)
+
+    # Proportion of stems 
+  plot(PropStems~MAP, pch =20,
+       xlab = NA,
+       xaxt="n",
+       ylab = NA,
+       col=site.cols$col, cex=cexpt)
+  mtext("Proportion of stems", side=2, line=2)
+  plot(PropStems~DSL, pch =20,
+       col=site.cols$col,
+       xlab = NA,
+       xaxt="n",
+       yaxt="n",
+       ylab=NA, cex=cexpt)
+  plot(PropStems~Lat, pch =20,
+       col=site.cols$col,
+       xlab = NA,
+       xaxt="n",
+       yaxt="n",
+       ylab=NA, cex=cexpt)
+
+    # Mean HOM 
+  plot(MeanHOM~MAP, pch =20,
+       xlab = NA,
+       ylab = NA,
+       col=site.cols$col, cex=cexpt)
+  mtext("Mean annual precipitation (mm)", side=1, line=2)
+  mtext("Mean HOM (m)", side=2, line=2)
+
+  plot(MeanHOM~DSL, pch =20,
+       col=site.cols$col,
+       xlab = NA,
+       yaxt="n",
+       ylab=NA, cex=cexpt)
+  mtext("Dry season length (months)", side=1, line=2)
+  plot(MeanHOM~Lat, pch =20,
+       col=site.cols$col,
+       xlab = NA,
+       yaxt="n",
+       ylab=NA, cex=cexpt)
+  mtext("Latitude (degrees from equator)", side=1, line=2)
+dev.off()
+
+  summary(lm(PropBA~MAP))  
+  summary(lm(PropBA~DSL))  
+  summary(lm(PropBA~Lat))   
+
+  summary(lm(PropStems~MAP))  
+  summary(lm(PropStems~DSL)) 
+  summary(lm(PropStems~Lat)) 
+  
+  summary(lm(MeanHOM~MAP))  
+  summary(lm(MeanHOM~DSL)) 
+  summary(lm(MeanHOM~Lat))
