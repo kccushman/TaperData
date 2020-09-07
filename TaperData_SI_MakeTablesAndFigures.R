@@ -1,7 +1,7 @@
-library(lme4)
-library(MuMIn)
-library(mcr)
-library(Hmisc)
+# library(lme4)
+# library(MuMIn)
+# library(mcr)
+# library(Hmisc)
 
 ###### Load data ######
   # Tree sample and taper parameter information for trees with 3-D models
@@ -55,6 +55,10 @@ library(Hmisc)
 ###### Table S7:Circularity values by family #####
   # Make a data frame with trees with circularity measurement at the HOM
   CircSample <- TreeSample[!is.na(TreeSample$iso),]
+    
+  # Are there significant differences among families?
+    summary(aov(iso~Family, CircSample))
+    
   # Aggregate - mean circularity by family
   FamilyCirc <- aggregate(CircSample$iso, by=list(CircSample$Family), FUN="mean")
   # Aggregate - SD circularity by family  
@@ -86,12 +90,72 @@ library(Hmisc)
   write.csv(CircTable, file="Table S7_Circularity by family.csv", row.names = F)  
   
 
+###### Table S8: HOM tests by site ######
+    HOM.results <- read.csv("Data file_HOMresultsPerPlot.csv")
+    load("ForestGEO_CensusData.RData")
+    
+      # Order census data by StemID and then by HOM (decreasing)
+      for(i in 1:length(AMA.cens)){
+        AMA.cens[[i]] <- AMA.cens[[i]][order(AMA.cens[[i]]$StemID,-AMA.cens[[i]]$hom),]
+      }
+      for(i in 1:length(BCI.cens)){
+        BCI.cens[[i]] <- BCI.cens[[i]][order(BCI.cens[[i]]$StemID,-BCI.cens[[i]]$hom),]
+      }
+      for(i in 1:length(BKT.cens)){
+        BKT.cens[[i]] <- BKT.cens[[i]][order(BKT.cens[[i]]$StemID,-BKT.cens[[i]]$hom),]
+      }
+      for(i in 1:length(HKK.cens)){
+        HKK.cens[[i]] <- HKK.cens[[i]][order(HKK.cens[[i]]$StemID,-HKK.cens[[i]]$hom),]
+      }
+      for(i in 1:length(KCH.cens)){
+        KCH.cens[[i]] <- KCH.cens[[i]][order(KCH.cens[[i]]$StemID,-KCH.cens[[i]]$hom),]
+      }
+    # Test for differnces over time within plots
+
+# Test for differnces over time within plots
+
+  ## AMA
+  #Kruskal-Wallis test
+  AMA.HOM.test <- kruskal.test(list(AMA.cens[[1]][!duplicated(AMA.cens[[1]]$StemID),"hom"],AMA.cens[[2]][!duplicated(AMA.cens[[2]]$StemID),"hom"]))
+ 
+  ## BCI
+  #Kruskal-Wallis test
+  BCI.HOM.test <- kruskal.test(list(BCI.cens[[2]][!duplicated(BCI.cens[[2]]$StemID),"hom"],
+                                    BCI.cens[[3]][!duplicated(BCI.cens[[3]]$StemID),"hom"],BCI.cens[[4]][!duplicated(BCI.cens[[4]]$StemID),"hom"],
+                                    BCI.cens[[5]][!duplicated(BCI.cens[[5]]$StemID),"hom"],BCI.cens[[6]][!duplicated(BCI.cens[[6]]$StemID),"hom"]))
+  
+  ## HKK
+  #Kruskal-Wallis test
+  HKK.HOM.test <- kruskal.test(list(HKK.cens[[1]][!duplicated(HKK.cens[[1]]$StemID),"hom"],HKK.cens[[2]][!duplicated(HKK.cens[[2]]$StemID),"hom"],
+                                    HKK.cens[[3]][!duplicated(HKK.cens[[3]]$StemID),"hom"],HKK.cens[[4]][!duplicated(HKK.cens[[4]]$StemID),"hom"]))
+  
+  ## KCH
+  #Kruskal-Wallis test
+  KCH.HOM.test <- kruskal.test(list(KCH.cens[[1]][!duplicated(KCH.cens[[1]]$StemID),"hom"],KCH.cens[[2]][!duplicated(KCH.cens[[2]]$StemID),"hom"],
+                                    KCH.cens[[3]][!duplicated(KCH.cens[[3]]$StemID),"hom"]))
+  
+    HomTestTable <- data.frame(Site=c("Amacayacu", "Barro Colorado", "Huai Kha Khaeng", "Khao Chong"),
+                             MinHOM=c(min(HOM.results[HOM.results$Site=="AMA",c("MeanHOM")]),
+                                      min(HOM.results[HOM.results$Site=="BCI",c("MeanHOM")]),
+                                      min(HOM.results[HOM.results$Site=="HKK",c("MeanHOM")]),
+                                      min(HOM.results[HOM.results$Site=="KCH",c("MeanHOM")])),
+                             MaxHOM=c(max(HOM.results[HOM.results$Site=="AMA",c("MeanHOM")]),
+                                      max(HOM.results[HOM.results$Site=="BCI",c("MeanHOM")]),
+                                      max(HOM.results[HOM.results$Site=="HKK",c("MeanHOM")]),
+                                      max(HOM.results[HOM.results$Site=="KCH",c("MeanHOM")])),
+                             Hval=c(AMA.HOM.test$statistic, BCI.HOM.test$statistic,HKK.HOM.test$statistic,
+                                    KCH.HOM.test$statistic),
+                             Pval=c(AMA.HOM.test$p.value, BCI.HOM.test$p.value,HKK.HOM.test$p.value,
+                                    KCH.HOM.test$p.value))
+    write.csv(HomTestTable, file="TableS8_MeasHeightsWithinPlots.csv", row.names = F)
 ###### Table S8:HOM variation by family #####
   RecentHOM <- rbind(AMA.cens[[2]][!duplicated(AMA.cens[[2]]$StemID),c("Family", "Site","hom","dbh")], BCI.cens[[6]][!duplicated(BCI.cens[[6]]$StemID),c("Family", "Site","hom","dbh")], 
                      BKT.cens[[1]][!duplicated(BKT.cens[[1]]$StemID),c("Family", "Site","hom","dbh")], HKK.cens[[4]][!duplicated(HKK.cens[[4]]$StemID),c("Family", "Site","hom","dbh")],
                      KCH.cens[[3]][!duplicated(KCH.cens[[3]]$StemID),c("Family", "Site","hom","dbh")])
   
   RecentHOM[is.na(RecentHOM$Family),"Family"] <- "Unknown"
+  
+  summary(aov(hom~Family, data = RecentHOM))
   
   FamilyHOM <- aggregate(RecentHOM$hom, by=list(RecentHOM$Family), FUN="mean")
   FamilyHOMSD <- aggregate(RecentHOM$hom, by=list(RecentHOM$Family), FUN="sd")
@@ -399,56 +463,75 @@ tiff(width=7, height=10, file="FigureS6_DistributionOfModelResiduals.tiff",res=3
 
 dev.off()
 
-###### Figure S7: Trunk circularity for each site #####
-  # Calculate empirical cumulative distribution functions for each plot
-    CircSample <- TreeSample[!is.na(TreeSample$iso),]
+###### Figure S7: Nonstandard measurement heights for trees >= 30 cm ######
+  HOM.results <- read.csv("Data file_HOMresultsPerPlot30.csv")
+  
+  axisSize <- 0.9
+  cexAx <- 1.1
+  textCex <- 1
+  ptSize <- 0.8
+  pchSig <- c(19,19,19,19,19)
+  
+  tiff(file="FigureS7_MeasHtChangesOverTime30.tiff",width=3,height=6, units="in", res=300, family = "sans")
 
-    AMA.circCDF <- Ecdf(CircSample[CircSample$Site=='AMA','iso'])
-    BCI.circCDF <- Ecdf(CircSample[CircSample$Site=='BCI','iso'])
-    BKT.circCDF <- Ecdf(CircSample[CircSample$Site=='BKT','iso'])
-    HKK.circCDF <- Ecdf(CircSample[CircSample$Site=='HKK','iso'])
-    KCH.circCDF <- Ecdf(CircSample[CircSample$Site=='KCH','iso'])
+    par(mfrow=c(3,1), mar=c(1,6,1,1),oma=c(2,1,0,0), family="sans", xpd=F, las=1)
     
-    tiff(width=5, height=5, file="Figure S7_Trunk circularity ECDFs for sites.tiff",res=300,units="in")
-      plot(0,type='n',
-           xlim=range(CircSample$iso),
-           ylim=c(0.01,1),
-           xlab=NA,ylab=NA,
-           log='y')
-      # Plot ECDF for each site
-        lines(AMA.circCDF, col=site.cols[site.cols$site=="Amacayacu","col"], lwd=2)
-        lines(BCI.circCDF, col=site.cols[site.cols$site=="Barro Colorado","col"], lwd=2)
-        lines(BKT.circCDF, col=site.cols[site.cols$site=="Bukit Timah","col"], lwd=2)
-        lines(HKK.circCDF, col=site.cols[site.cols$site=="Huai Kha Khaeng","col"], lwd=2)
-        lines(KCH.circCDF, col=site.cols[site.cols$site=="Khao Chong","col"], lwd=2)
-      abline(h=1,lty=2)
-      abline(h=0.5,lty=1)
-      # Plot vertical line for mean ciruclarity per site
-        abline(v=mean(CircSample[CircSample$Site=='AMA','iso']), col=site.cols[site.cols$site=="AMA","col"])
-        abline(v=mean(CircSample[CircSample$Site=='BCI','iso']), col=site.cols[site.cols$site=="BCI","col"])
-        abline(v=mean(CircSample[CircSample$Site=='BKT','iso']), col=site.cols[site.cols$site=="BKT","col"])
-        abline(v=mean(CircSample[CircSample$Site=='HKK','iso']), col=site.cols[site.cols$site=="HKK","col"])
-        abline(v=mean(CircSample[CircSample$Site=='KCH','iso']), col=site.cols[site.cols$site=="KCH","col"])
-      legend(x=0.3,y=0.5,
-             sitesNames[1:5],
-             col=site.cols$col[1:5],
-             bty='n',
-             lwd=2)
-      mtext("Trunk circularity", side=1, line=2)
-      mtext("Cumulative proportion", side=2, line=2)
-    dev.off()
+    plot(x=HOM.results$Year, y=HOM.results$Prop*100,
+         type='n',
+         ylab=NA,ylim=c(0,100),
+         xlab=NA,
+         xaxt = "n",
+         cex.axis=cexAx)
+    mtext("% of \nstems", side=2, line=6.8, cex=axisSize, adj=0)
+    text(x=1990.5,y=97,"a", cex=textCex+0.3)
     
-    Circ.Test1 <- kruskal.test(list(CircSample[CircSample$Site=='AMA','iso'],
-                                    CircSample[CircSample$Site=='BCI','iso'],
-                                    CircSample[CircSample$Site=='BKT','iso'],
-                                    CircSample[CircSample$Site=='HKK','iso'],
-                                    CircSample[CircSample$Site=='KCH','iso']))
-    Circ.Test2 <- kruskal.test(list(CircSample[CircSample$Site=='AMA','iso'],
-                                    CircSample[CircSample$Site=='BCI','iso'],
-                                    CircSample[CircSample$Site=='HKK','iso'],
-                                    CircSample[CircSample$Site=='KCH','iso']))
+    for(i in 1:length(sites)){
+        points(x=HOM.results[HOM.results$Site==sites[i],"Year"],
+               y=HOM.results[HOM.results$Site==sites[i],"Prop"]*100, 
+               pch=pchSig[i], col=site.cols[site.cols$site==sites[i],"col"], cex=ptSize)
+        lines(x=HOM.results[HOM.results$Site==sites[i],"Year"],
+              y=HOM.results[HOM.results$Site==sites[i],"Prop"]*100, col=site.cols[site.cols$site==sites[i],"col"], lty=1)
+    }
     
-
+    legend(x=2004, y=105, bty='n',
+       sitesNames,
+       col=site.cols$col,
+       cex=cexAx-0.3,
+       pch=pchSig)
+    
+    plot(x=HOM.results$Year, y=HOM.results$PropBA*100,
+         type='n',
+         ylab=NA,ylim=c(0,100),
+         xlab=NA,
+         xaxt = "n",
+         cex.axis=cexAx)
+    mtext("% of \nbasal \narea", side=2, line=6.8, cex=axisSize, adj=0)
+    text(x=1990.5,y=97,"b", cex=textCex+0.3)
+    for(i in 1:length(sites)){
+        points(x=HOM.results[HOM.results$Site==sites[i],"Year"],
+               y=HOM.results[HOM.results$Site==sites[i],"PropBA"]*100, 
+               pch=pchSig[i], col=site.cols[site.cols$site==sites[i],"col"], cex=ptSize)
+        lines(x=HOM.results[HOM.results$Site==sites[i],"Year"],
+              y=HOM.results[HOM.results$Site==sites[i],"PropBA"]*100, col=site.cols[site.cols$site==sites[i],"col"], lty=1)
+    }
+    
+    plot(x=HOM.results$Year,y=HOM.results$MeanHOM,
+         type='n',
+         ylab=NA,
+         xlab=NA,
+         cex.axis=cexAx)
+    mtext("Census year", side=1, line=2, cex=axisSize)
+    mtext("Average \nHOM (m)", side=2, line=6.8, cex=axisSize, adj=0)
+    text(x=1990.5,y=3.55,"c", cex=textCex+0.3)
+    for(i in 1:length(sites)){
+        points(x=HOM.results[HOM.results$Site==sites[i],"Year"],
+               y=HOM.results[HOM.results$Site==sites[i],"MeanHOM"], 
+               pch=pchSig[i], col=site.cols[site.cols$site==sites[i],"col"], cex=ptSize)
+        lines(x=HOM.results[HOM.results$Site==sites[i],"Year"],
+              y=HOM.results[HOM.results$Site==sites[i],"MeanHOM"], col=site.cols[site.cols$site==sites[i],"col"], lty=1)
+    }
+  dev.off()
+  
 ###### Figure S8: Trunk circularity for each tree #####
   contours$Tag <- as.character(contours$Tag) 
     
@@ -478,6 +561,7 @@ dev.off()
     mtext("Distance from measurement height (m)", side=2,outer=T, cex=1.5)
   dev.off()
 
+  
 ###### Figure S9: HOM variation versus climate and latitude ######
   
     # Vector of MAP in site alphabetical order
