@@ -1,8 +1,3 @@
-# library(lme4)
-# library(MuMIn)
-# library(mcr)
-# library(Hmisc)
-
 ###### Load data ######
   # Tree sample and taper parameter information for trees with 3-D models
     TaperSample <- read.csv("DataFile_TaperParameterSample.csv")
@@ -32,7 +27,7 @@
   
   site.cols$col <- as.character(site.cols$col)
         
-###### Table S5:Random intercept values for family and site #####
+###### Tables S5-6:Random intercept values for family and site #####
   
   # Best taper models from model comparison 
   
@@ -50,7 +45,7 @@
     SiteCoefs2 <- data.frame(Group=c(rownames(coef(model3a.f)[[2]])),
                              Intercept=c(coef(model3a.f)[[2]][,1]))
     
-    write.csv(rbind(SiteCoefs1,FamilyCoefs2,SiteCoefs2), row.names = F, file="TableS5_RandomIntercepts.csv")
+    write.csv(rbind(SiteCoefs1,FamilyCoefs2,SiteCoefs2), row.names = F, file="TablesS5and6_RandomIntercepts.csv")
 
 ###### Table S7:Circularity values by family #####
   # Make a data frame with trees with circularity measurement at the HOM
@@ -148,7 +143,7 @@
                              Pval=c(AMA.HOM.test$p.value, BCI.HOM.test$p.value,HKK.HOM.test$p.value,
                                     KCH.HOM.test$p.value))
     write.csv(HomTestTable, file="TableS8_MeasHeightsWithinPlots.csv", row.names = F)
-###### Table S8:HOM variation by family #####
+###### Table S9: HOM variation by family #####
   RecentHOM <- rbind(AMA.cens[[2]][!duplicated(AMA.cens[[2]]$StemID),c("Family", "Site","hom","dbh")], BCI.cens[[6]][!duplicated(BCI.cens[[6]]$StemID),c("Family", "Site","hom","dbh")], 
                      BKT.cens[[1]][!duplicated(BKT.cens[[1]]$StemID),c("Family", "Site","hom","dbh")], HKK.cens[[4]][!duplicated(HKK.cens[[4]]$StemID),c("Family", "Site","hom","dbh")],
                      KCH.cens[[3]][!duplicated(KCH.cens[[3]]$StemID),c("Family", "Site","hom","dbh")])
@@ -187,7 +182,7 @@
   HOMTable10 <- HOMTable[HOMTable$SampleSize>=10,]
   
   # Write table to .csv
-  write.csv(HOMTable10, file="TableS8_MeasHtByFamily.csv", row.names = F)
+  write.csv(HOMTable10, file="TableS9_MeasHtByFamily.csv", row.names = F)
 
 ###### Figure S1: Taper parameter variation with height #####
   range.lm <- lm(b1.iso~range.iso, data=TaperSample)
