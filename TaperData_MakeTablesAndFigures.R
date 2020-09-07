@@ -178,7 +178,7 @@
        sitesNames,
        col=site.cols$col,
        cex=cexAx-0.3,
-       pch=pchSig+0.4)
+       pch=19)
     
     plot(x=HOM.results$Year, y=HOM.results$PropBA*100,
          type='n',

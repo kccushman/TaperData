@@ -571,9 +571,10 @@ dev.off()
   MeanHOM <- c(2.554515, 3.658446, 1.664472, 1.541162, 3.012815)
   
   cexpt=2
+  cexAx = 1.4
   
-tiff(width=8, height=6, file="FigureS9_MeasHtVersusClimate.tiff",res=300,units="in")
-    par(mfrow=c(3,3), family="serif", mar=c(2,2,1,1),oma=c(2,2,1,1))
+tiff(width=7, height=6.5, file="FigureS9_MeasHtVersusClimate.tiff",res=300,units="in")
+    par(mfrow=c(3,3), family="sans", mar=c(2,2,1,1),oma=c(2,2,1,1))
     
     
   # Proportion of basal area  
@@ -581,71 +582,80 @@ tiff(width=8, height=6, file="FigureS9_MeasHtVersusClimate.tiff",res=300,units="
        xlab = NA,
        xaxt="n",
        ylab = NA,
-       col=site.cols$col, cex=cexpt)
-  mtext("Proportion of basal area", side=2, line=2)
+       col=site.cols$col, cex=cexpt, cex.axis = cexAx)
+  mtext("Proportion of basal area", side=2, line=2, cex=0.9)
+  text("a", x = 1500, y = 0.7, cex = cexAx)
+  
+      legend(x=1450, y=0.68, bty='n',
+       sitesNames,
+       col=site.cols$col,
+       cex=1.2,
+       pch=19)
+      
+      
   plot(PropBA~DSL, pch =20,
        col=site.cols$col,
        xlab = NA,
        xaxt="n",
        yaxt="n",
-       ylab=NA, cex=cexpt)
+       ylab=NA, cex=cexpt, cex.axis = cexAx)
+   text("b", x = 0, y = 0.7, cex = cexAx)
+   
   plot(PropBA~Lat, pch =20,
        col=site.cols$col,
        xlab = NA,
        xaxt="n",
        yaxt="n",
-       ylab=NA, cex=cexpt)
+       ylab=NA, cex=cexpt, cex.axis = cexAx)
+   text("c", x = 1.5, y = 0.7, cex = cexAx)
 
     # Proportion of stems 
   plot(PropStems~MAP, pch =20,
        xlab = NA,
        xaxt="n",
        ylab = NA,
-       col=site.cols$col, cex=cexpt)
-  mtext("Proportion of stems", side=2, line=2)
+       col=site.cols$col, cex=cexpt, cex.axis = cexAx)
+  mtext("Proportion of stems", side=2, line=2, cex=0.9)
+  text("d", x = 1500, y = 0.6, cex = cexAx)
+   
   plot(PropStems~DSL, pch =20,
        col=site.cols$col,
        xlab = NA,
        xaxt="n",
        yaxt="n",
-       ylab=NA, cex=cexpt)
+       ylab=NA, cex=cexpt, cex.axis = cexAx)
+  text("e", x = 0, y = 0.6, cex = cexAx) 
+  
   plot(PropStems~Lat, pch =20,
        col=site.cols$col,
        xlab = NA,
        xaxt="n",
        yaxt="n",
-       ylab=NA, cex=cexpt)
+       ylab=NA, cex=cexpt, cex.axis = cexAx)
+  text("f", x = 1.5, y = 0.6, cex = cexAx) 
 
     # Mean HOM 
   plot(MeanHOM~MAP, pch =20,
        xlab = NA,
        ylab = NA,
-       col=site.cols$col, cex=cexpt)
-  mtext("Mean annual precipitation (mm)", side=1, line=2)
-  mtext("Mean HOM (m)", side=2, line=2)
+       col=site.cols$col, cex=cexpt, cex.axis = cexAx)
+  text("g", x = 1500, y = 3.5, cex = cexAx) 
+  
+  mtext("Mean annual precipitation (mm)", side=1, line=2, cex=0.9)
+  mtext("Mean HOM (m)", side=2, line=2, cex=0.9)
 
   plot(MeanHOM~DSL, pch =20,
        col=site.cols$col,
        xlab = NA,
        yaxt="n",
-       ylab=NA, cex=cexpt)
-  mtext("Dry season length (months)", side=1, line=2)
+       ylab=NA, cex=cexpt, cex.axis = cexAx)
+  text("h", x = 0, y = 3.5, cex = cexAx)
+  mtext("Dry season length (months)", side=1, line=2, cex=0.9)
   plot(MeanHOM~Lat, pch =20,
        col=site.cols$col,
        xlab = NA,
        yaxt="n",
-       ylab=NA, cex=cexpt)
-  mtext("Latitude (degrees from equator)", side=1, line=2)
+       ylab=NA, cex=cexpt, cex.axis = cexAx)
+  text("i", x = 1.5, y = 3.5, cex = cexAx)
+  mtext("Latitude (degrees from equator)", side=1, line=2, cex=0.9)
 dev.off()
-
-  summary(lm(PropBA~MAP))  
-  summary(lm(PropBA~DSL))  
-  summary(lm(PropBA~Lat))   
-
-  summary(lm(PropStems~MAP))  
-  summary(lm(PropStems~DSL)) 
-  summary(lm(PropStems~Lat)) 
-  
-  summary(lm(MeanHOM~MAP))  
-  summary(lm(MeanHOM~DSL)) 
-  summary(lm(MeanHOM~Lat))
