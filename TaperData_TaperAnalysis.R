@@ -347,46 +347,51 @@ TaperSample <- read.csv("DataFile_TaperParameterSample.csv")
       TreeSample[TreeSample$ID==ContourTrees[i],"range.hom"] <- ifelse(is.na(results.hom),NA,range(tree.hom$ht)[2]-range(tree.hom$ht)[1])
       TreeSample[TreeSample$ID==ContourTrees[i],"range.iso"] <- ifelse(is.na(results.iso),NA,range(tree.iso$ht)[2]-range(tree.iso$ht)[1])
     }
-  
+    
+      # Convert DBH to cm
+      TreeSample$DBH <- TreeSample$DBH/10
+    
     # Save only measurements to use in a separate data frame called Taper Sample. These are trees for which
     # a taper parameter was estimated, and which had at least 1.4 m of trunk shape measurements.
     TaperSample <- TreeSample[!is.na(TreeSample$b1.iso),]
     TaperSample <- TaperSample[TaperSample$range.iso >= 1.4,]
     
-    # Convert DBH to cm
-    TaperSample$DBH <- TaperSample$DBH/10
+    # Save only trees with circularity measurement
+    CircSample <- TreeSample[!is.na(TreeSample$iso),]
+    
+   
     
 #### 3. Compare models explaining variation in taper parameter ####
     
     # Models WITHOUT family random effect
     
     # Null model
-    modelnull <- lme4::lmer(log(b1.iso)~ (1|Site), data = TaperSample)
+    modelnull <- lme4::lmer(b1.iso~ (1|Site), data = TaperSample)
     # With one variable
-    model1a <- lme4::lmer(log(b1.iso)~log(DBH) + (1|Site), data = TaperSample)
-    model1b <- lme4::lmer(log(b1.iso)~log(HOM) + (1|Site), data = TaperSample)
-    model1c <- lme4::lmer(log(b1.iso)~log(WSG) + (1|Site), data = TaperSample)
+    model1a <- lme4::lmer(b1.iso~log(DBH) + (1|Site), data = TaperSample)
+    model1b <- lme4::lmer(b1.iso~log(HOM) + (1|Site), data = TaperSample)
+    model1c <- lme4::lmer(b1.iso~log(WSG) + (1|Site), data = TaperSample)
     # With two variables
-    model2a <- lme4::lmer(log(b1.iso)~log(DBH) + log(HOM) + (1|Site), data = TaperSample)
-    model2b <- lme4::lmer(log(b1.iso)~log(DBH) + log(WSG) + (1|Site), data = TaperSample)
-    model2c <- lme4::lmer(log(b1.iso)~log(HOM) + log(WSG) + (1|Site), data = TaperSample)
+    model2a <- lme4::lmer(b1.iso~log(DBH) + log(HOM) + (1|Site), data = TaperSample)
+    model2b <- lme4::lmer(b1.iso~log(DBH) + log(WSG) + (1|Site), data = TaperSample)
+    model2c <- lme4::lmer(b1.iso~log(HOM) + log(WSG) + (1|Site), data = TaperSample)
     # With three variables
-    model3a <- lme4::lmer(log(b1.iso)~log(DBH) + log(HOM) + log(WSG) + (1|Site), data = TaperSample)
+    model3a <- lme4::lmer(b1.iso~log(DBH) + log(HOM) + log(WSG) + (1|Site), data = TaperSample)
     
     # Models WITH family random effect
     
     # Null model
-    modelnull.f <- lme4::lmer(log(b1.iso)~ (1|Site) + (1|Family), data = TaperSample)
+    modelnull.f <- lme4::lmer(b1.iso~ (1|Site) + (1|Family), data = TaperSample)
     # With one variable
-    model1a.f <- lme4::lmer(log(b1.iso)~log(DBH) + (1|Site) + (1|Family), data = TaperSample)
-    model1b.f <- lme4::lmer(log(b1.iso)~log(HOM) + (1|Site) + (1|Family), data = TaperSample)
-    model1c.f <- lme4::lmer(log(b1.iso)~log(WSG) + (1|Site) + (1|Family), data = TaperSample)
+    model1a.f <- lme4::lmer(b1.iso~log(DBH) + (1|Site) + (1|Family), data = TaperSample)
+    model1b.f <- lme4::lmer(b1.iso~log(HOM) + (1|Site) + (1|Family), data = TaperSample)
+    model1c.f <- lme4::lmer(b1.iso~log(WSG) + (1|Site) + (1|Family), data = TaperSample)
     # With two variables
-    model2a.f <- lme4::lmer(log(b1.iso)~log(DBH) + log(HOM) + (1|Site) + (1|Family), data = TaperSample)
-    model2b.f <- lme4::lmer(log(b1.iso)~log(DBH) + log(WSG) + (1|Site) + (1|Family), data = TaperSample)
-    model2c.f <- lme4::lmer(log(b1.iso)~log(HOM) + log(WSG) + (1|Site) + (1|Family), data = TaperSample)
+    model2a.f <- lme4::lmer(b1.iso~log(DBH) + log(HOM) + (1|Site) + (1|Family), data = TaperSample)
+    model2b.f <- lme4::lmer(b1.iso~log(DBH) + log(WSG) + (1|Site) + (1|Family), data = TaperSample)
+    model2c.f <- lme4::lmer(b1.iso~log(HOM) + log(WSG) + (1|Site) + (1|Family), data = TaperSample)
     # With three variables
-    model3a.f <- lme4::lmer(log(b1.iso)~log(DBH) + log(HOM) + log(WSG) + (1|Site) + (1|Family), data = TaperSample)
+    model3a.f <- lme4::lmer(b1.iso~log(DBH) + log(HOM) + log(WSG) + (1|Site) + (1|Family), data = TaperSample)
     
     # Make a table comparing models (for main text)    
     ModelCompare <- anova(modelnull, model1a, model1b, model1c, model2a, model2b, model2c, model3a,
@@ -423,22 +428,22 @@ TaperSample <- read.csv("DataFile_TaperParameterSample.csv")
                                     MuMIn::r.squaredGLMM(model2b.f)[2], 
                                     MuMIn::r.squaredGLMM(model2c.f)[2], 
                                     MuMIn::r.squaredGLMM(model3a.f)[2])
-    ModelCompare$Description <- c(paste("Log(b1) = ",round(summary(modelnull)$coefficients[1],3)," + Site", sep=""),
-                                  paste("Log(b1) = ",round(summary(model1a)$coefficients[1,1],3)," + ",round(summary(model1a)$coefficients[2,1],3),"*log(DAB) + Site", sep=""),
-                                  paste("Log(b1) = ",round(summary(model1b)$coefficients[1,1],3)," + ",round(summary(model1b)$coefficients[2,1],3),"*log(HOM) + Site", sep=""),
-                                  paste("Log(b1) = ",round(summary(model1c)$coefficients[1,1],3)," + ",round(summary(model1c)$coefficients[2,1],3),"*log(WSG) + Site", sep=""),
-                                  paste("Log(b1) = ",round(summary(modelnull.f)$coefficients[1],3)," + Site + Family", sep=""),
-                                  paste("Log(b1) = ",round(summary(model2a)$coefficients[1,1],3)," + ",round(summary(model2a)$coefficients[2,1],3),"*log(DAB) ",round(summary(model2a)$coefficients[3,1],3),"*log(HOM) ", "+ Site", sep=""),
-                                  paste("Log(b1) = ",round(summary(model2b)$coefficients[1,1],3)," + ",round(summary(model2b)$coefficients[2,1],3),"*log(DAB) ",round(summary(model2b)$coefficients[3,1],3),"*log(WSG) ", "+ Site", sep=""),
-                                  paste("Log(b1) = ",round(summary(model2c)$coefficients[1,1],3)," + ",round(summary(model2c)$coefficients[2,1],3),"*log(HOM) ",round(summary(model2c)$coefficients[3,1],3),"*log(WSG) ", "+ Site", sep=""),
-                                  paste("Log(b1) = ",round(summary(model1a.f)$coefficients[1,1],3)," + ",round(summary(model1a.f)$coefficients[2,1],3),"*log(DAB) + Site + Family", sep=""),
-                                  paste("Log(b1) = ",round(summary(model1b.f)$coefficients[1,1],3)," + ",round(summary(model1b.f)$coefficients[2,1],3),"*log(HOM) + Site + Family", sep=""),
-                                  paste("Log(b1) = ",round(summary(model1c.f)$coefficients[1,1],3)," + ",round(summary(model1c.f)$coefficients[2,1],3),"*log(WSG) + Site + Family", sep=""),
-                                  paste("Log(b1) = ",round(summary(model3a)$coefficients[1,1],3)," + ",round(summary(model3a)$coefficients[2,1],3),"*log(DAB) ",round(summary(model3a)$coefficients[3,1],3),"*log(HOM) ",round(summary(model3a)$coefficients[4,1],3),"*log(WSG) ", "+ Site", sep=""),
-                                  paste("Log(b1) = ",round(summary(model2a.f)$coefficients[1,1],3)," + ",round(summary(model2a.f)$coefficients[2,1],3),"*log(DAB) ",round(summary(model2a.f)$coefficients[3,1],3),"*log(HOM) ", "+ Site + Family", sep=""),
-                                  paste("Log(b1) = ",round(summary(model2b.f)$coefficients[1,1],3)," + ",round(summary(model2b.f)$coefficients[2,1],3),"*log(DAB) ",round(summary(model2b.f)$coefficients[3,1],3),"*log(WSG) ", "+ Site + Family", sep=""),
-                                  paste("Log(b1) = ",round(summary(model2c.f)$coefficients[1,1],3)," + ",round(summary(model2c.f)$coefficients[2,1],3),"*log(HOM) ",round(summary(model2c.f)$coefficients[3,1],3),"*log(WSG) ", "+ Site + Family", sep=""),
-                                  paste("Log(b1) = ",round(summary(model3a.f)$coefficients[1,1],3)," + ",round(summary(model3a.f)$coefficients[2,1],3),"*log(DAB) ",round(summary(model3a.f)$coefficients[3,1],3),"*log(HOM) ",round(summary(model3a.f)$coefficients[4,1],3),"*log(WSG) ", "+ Site + Family", sep=""))
+    ModelCompare$Description <- c(paste("b = ",round(summary(modelnull)$coefficients[1],3)," + Site", sep=""),
+                                  paste("b = ",round(summary(model1a)$coefficients[1,1],3)," + ",round(summary(model1a)$coefficients[2,1],3),"*log(DAB) + Site", sep=""),
+                                  paste("b = ",round(summary(model1b)$coefficients[1,1],3)," + ",round(summary(model1b)$coefficients[2,1],3),"*log(HOM) + Site", sep=""),
+                                  paste("b = ",round(summary(model1c)$coefficients[1,1],3)," + ",round(summary(model1c)$coefficients[2,1],3),"*log(WSG) + Site", sep=""),
+                                  paste("b = ",round(summary(modelnull.f)$coefficients[1],3)," + Site + Family", sep=""),
+                                  paste("b = ",round(summary(model2a)$coefficients[1,1],3)," + ",round(summary(model2a)$coefficients[2,1],3),"*log(DAB) ",round(summary(model2a)$coefficients[3,1],3),"*log(HOM) ", "+ Site", sep=""),
+                                  paste("b = ",round(summary(model2b)$coefficients[1,1],3)," + ",round(summary(model2b)$coefficients[2,1],3),"*log(DAB) ",round(summary(model2b)$coefficients[3,1],3),"*log(WSG) ", "+ Site", sep=""),
+                                  paste("b = ",round(summary(model2c)$coefficients[1,1],3)," + ",round(summary(model2c)$coefficients[2,1],3),"*log(HOM) ",round(summary(model2c)$coefficients[3,1],3),"*log(WSG) ", "+ Site", sep=""),
+                                  paste("b = ",round(summary(model1a.f)$coefficients[1,1],3)," + ",round(summary(model1a.f)$coefficients[2,1],3),"*log(DAB) + Site + Family", sep=""),
+                                  paste("b = ",round(summary(model1b.f)$coefficients[1,1],3)," + ",round(summary(model1b.f)$coefficients[2,1],3),"*log(HOM) + Site + Family", sep=""),
+                                  paste("b = ",round(summary(model1c.f)$coefficients[1,1],3)," + ",round(summary(model1c.f)$coefficients[2,1],3),"*log(WSG) + Site + Family", sep=""),
+                                  paste("b = ",round(summary(model3a)$coefficients[1,1],3)," + ",round(summary(model3a)$coefficients[2,1],3),"*log(DAB) ",round(summary(model3a)$coefficients[3,1],3),"*log(HOM) ",round(summary(model3a)$coefficients[4,1],3),"*log(WSG) ", "+ Site", sep=""),
+                                  paste("b = ",round(summary(model2a.f)$coefficients[1,1],3)," + ",round(summary(model2a.f)$coefficients[2,1],3),"*log(DAB) ",round(summary(model2a.f)$coefficients[3,1],3),"*log(HOM) ", "+ Site + Family", sep=""),
+                                  paste("b = ",round(summary(model2b.f)$coefficients[1,1],3)," + ",round(summary(model2b.f)$coefficients[2,1],3),"*log(DAB) ",round(summary(model2b.f)$coefficients[3,1],3),"*log(WSG) ", "+ Site + Family", sep=""),
+                                  paste("b = ",round(summary(model2c.f)$coefficients[1,1],3)," + ",round(summary(model2c.f)$coefficients[2,1],3),"*log(HOM) ",round(summary(model2c.f)$coefficients[3,1],3),"*log(WSG) ", "+ Site + Family", sep=""),
+                                  paste("b = ",round(summary(model3a.f)$coefficients[1,1],3)," + ",round(summary(model3a.f)$coefficients[2,1],3),"*log(DAB) ",round(summary(model3a.f)$coefficients[3,1],3),"*log(HOM) ",round(summary(model3a.f)$coefficients[4,1],3),"*log(WSG) ", "+ Site + Family", sep=""))
     ModelCompare$Description <- as.character(ModelCompare$Description)
     
     ModelResults <- ModelCompare[,c("Description","Df","AIC","R2marginal","R2conditional")]
@@ -447,15 +452,174 @@ TaperSample <- read.csv("DataFile_TaperParameterSample.csv")
     
     
 #### 4. Save files ####    
-    write.csv(ModelResults, file="Table2_TaperMixedModelComparison.csv",
+    write.csv(ModelResults, file="Table3_TaperMixedModelComparison.csv",
               row.names = F)
     write.csv(TaperSample, file="DataFile_TaperParameterSample.csv",
               row.names = F)
     write.csv(TreeSample, file="DataFile_AllTaperEstimates.csv",
-          row.names = F)
+              row.names = F)
+    write.csv(CircSample, file="DataFile_CircSample.csv",
+              row.names = F)
 
   # Verify that residuals of best model don't vary by site using a 1-way ANOVA
     ModelResiduals <- data.frame(residual = residuals(model3a),
                                  site = TaperSample[TaperSample$b1.iso>0,"Site"])
     residualANOVA <- lm(residual~site, data=ModelResiduals)
     summary(residualANOVA)
+
+#### Revision edit: Make table with taper by site ####
+  
+  # Calculate EDBH, basal area, and AGB for each tree
+    agb.allometry <- function(E,wsg,dbh) {exp(-1.803-0.976*E+0.976*log(wsg)
+                                              + 2.673*log(dbh) - 0.0299*(log(dbh)^2))}
+    
+    taper.eqn <- function(d,h,b1) {d/(exp(-b1*(h-1.3)))}
+    
+    TaperSample$EDBH <- taper.eqn(d = TaperSample$DBH,
+                                  h = TaperSample$HOM,
+                                  b1 = TaperSample$b1.iso)
+    
+    TaperSample$BA <- pi*(TaperSample$EDBH/2)^2
+    
+    TaperSample$E <- NA
+      TaperSample[TaperSample$Site=="AMA","E"] <- -0.07928769
+      TaperSample[TaperSample$Site=="BCI","E"] <- 0.04944549
+      TaperSample[TaperSample$Site=="BKT","E"] <- -0.05956875
+      TaperSample[TaperSample$Site=="HKK","E"] <- 0.3194663
+      TaperSample[TaperSample$Site=="KCH","E"] <- 0.04786947
+      
+    TaperSample$AGB <- agb.allometry(E = TaperSample$E,
+                                     wsg = TaperSample$WSG,
+                                     dbh = TaperSample$DBH)
+    
+    TaperSample$Vol <- TaperSample$AGB/TaperSample$WSG
+    
+    TaperBySite <- data.frame(Site = c("AMA","BCI","BKT","HKK","KCH"),
+                              n = NA,
+                              Mean = NA,
+                              SD = NA,
+                              Mean.BA = NA,
+                              Mean.AGB = NA,
+                              Mean.Vol = NA)
+    
+    for(i in 1:length(TaperBySite$Site)){
+      TaperBySite[i,"n"] <- length(TaperSample[TaperSample$Site==TaperBySite$Site[i],"b1.iso"])
+      TaperBySite[i,"Mean"] <- mean(TaperSample[TaperSample$Site==TaperBySite$Site[i],"b1.iso"])
+      TaperBySite[i,"SD"] <- sd(TaperSample[TaperSample$Site==TaperBySite$Site[i],"b1.iso"])
+      TaperBySite[i,"Mean.BA"] <- weighted.mean(x = TaperSample[TaperSample$Site==TaperBySite$Site[i],"b1.iso"],
+                                                w = TaperSample[TaperSample$Site==TaperBySite$Site[i],"BA"])
+      TaperBySite[i,"Mean.AGB"] <- weighted.mean(x = TaperSample[TaperSample$Site==TaperBySite$Site[i],"b1.iso"],
+                                                 w = TaperSample[TaperSample$Site==TaperBySite$Site[i],"AGB"])
+      TaperBySite[i,"Mean.Vol"] <- weighted.mean(x = TaperSample[TaperSample$Site==TaperBySite$Site[i],"b1.iso"],
+                                                 w = TaperSample[TaperSample$Site==TaperBySite$Site[i],"Vol"])
+    }
+    
+    write.csv(TaperBySite, file="TaperVariationTable.csv")
+      
+#### Revision edit: Make table with circularity by site ####    
+# Calculate EDBH, basal area, and AGB for each tree
+    agb.allometry <- function(E,wsg,dbh) {exp(-1.803-0.976*E+0.976*log(wsg)
+                                              + 2.673*log(dbh) - 0.0299*(log(dbh)^2))}
+    
+    taper.eqn <- function(d,h,b1) {d/(exp(-b1*(h-1.3)))}
+    
+    CircSample$EDBH <- taper.eqn(d = CircSample$DBH,
+                                  h = CircSample$HOM,
+                                  b1 = CircSample$b1.iso)
+    
+    CircSample$BA <- pi*(CircSample$EDBH/2)^2
+    
+    CircSample$E <- NA
+      CircSample[CircSample$Site=="AMA","E"] <- -0.07928769
+      CircSample[CircSample$Site=="BCI","E"] <- 0.04944549
+      CircSample[CircSample$Site=="BKT","E"] <- -0.05956875
+      CircSample[CircSample$Site=="HKK","E"] <- 0.3194663
+      CircSample[CircSample$Site=="KCH","E"] <- 0.04786947
+      
+    CircSample$AGB <- agb.allometry(E = CircSample$E,
+                                     wsg = CircSample$WSG,
+                                     dbh = CircSample$DBH)
+    
+    CircSample$Vol <- CircSample$AGB/CircSample$WSG
+    
+    CircBySite <- data.frame(Site = c("AMA","BCI","BKT","HKK","KCH"),
+                             n = NA,
+                              Mean = NA,
+                              SD = NA,
+                              Mean.BA = NA,
+                              Mean.AGB = NA,
+                              Mean.Vol = NA)
+    
+    for(i in 1:length(CircBySite$Site)){
+      CircBySite[i,"n"] <- length(CircSample[CircSample$Site==CircBySite$Site[i],"iso"])
+      CircBySite[i,"Mean"] <- mean(CircSample[CircSample$Site==CircBySite$Site[i],"iso"])
+      CircBySite[i,"SD"] <- sd(CircSample[CircSample$Site==CircBySite$Site[i],"iso"])
+      CircBySite[i,"Mean.BA"] <- weighted.mean(x = CircSample[CircSample$Site==CircBySite$Site[i],"iso"],
+                                                w = CircSample[CircSample$Site==CircBySite$Site[i],"BA"])
+      CircBySite[i,"Mean.AGB"] <- weighted.mean(x = CircSample[CircSample$Site==CircBySite$Site[i],"iso"],
+                                                 w = CircSample[CircSample$Site==CircBySite$Site[i],"AGB"])
+      CircBySite[i,"Mean.Vol"] <- weighted.mean(x = CircSample[CircSample$Site==CircBySite$Site[i],"iso"],
+                                                 w = CircSample[CircSample$Site==CircBySite$Site[i],"Vol"])
+    }
+    
+    write.csv(CircBySite, file="CircVariationTable.csv")
+#### Revision edit: Explore alternate taper parameter analysis options ####
+    
+     # Krusal-Wallis test
+      b.Test <- kruskal.test(list(TaperSample[TaperSample$Site=='AMA','b1.iso'],
+                                  TaperSample[TaperSample$Site=='BCI','b1.iso'],
+                                  TaperSample[TaperSample$Site=='BKT','b1.iso'],
+                                  TaperSample[TaperSample$Site=='HKK','b1.iso'],
+                                  TaperSample[TaperSample$Site=='KCH','b1.iso']))
+      
+      b.Test30 <- kruskal.test(list(TaperSample[TaperSample$Site=='AMA' & TaperSample$DBH>=30,'b1.iso'],
+                                    TaperSample[TaperSample$Site=='BCI' & TaperSample$DBH>=30,'b1.iso'],
+                                    TaperSample[TaperSample$Site=='BKT' & TaperSample$DBH>=30,'b1.iso'],
+                                    TaperSample[TaperSample$Site=='HKK' & TaperSample$DBH>=30,'b1.iso'],
+                                    TaperSample[TaperSample$Site=='KCH' & TaperSample$DBH>=30,'b1.iso']))
+      
+      # Variance explained by fixed effects for site
+      summary(lm(log(b1.iso)~Site, data = TaperSample))
+      summary(lm(log(b1.iso)~Site+Family, data = TaperSample))
+      # try without log transform
+      summary(lm(b1.iso~Site, data = TaperSample))
+      summary(lm(b1.iso~Site+Family, data = TaperSample))
+        
+      # Look at distribution of values-- neither normal nor lognormal
+        # Taper parameter
+        shapiro.test(TaperSample$b1.iso)
+        shapiro.test(log(TaperSample$b1.iso))
+        shapiro.test(sqrt(TaperSample$b1.iso))
+      
+        hist(TaperSample$b1.iso,
+             breaks = seq(-0.1,0.2,0.01),
+             col="black",border="white", xlab = "Taper parameter")
+        hist(log(TaperSample$b1.iso),
+             breaks = seq(-10,1,0.4),
+             col="black",border="white", xlab = "Taper parameter")
+        hist(sqrt(TaperSample$b1.iso),
+             col="black",border="white", xlab = "Taper parameter")
+        
+        # DAB -- is lognormal
+        shapiro.test(TaperSample$DBH)
+        shapiro.test(log(TaperSample$DBH)) 
+        
+        # HOM -- neither normal nor lognormal
+        shapiro.test(TaperSample$HOM)
+        shapiro.test(log(TaperSample$HOM))
+        
+        hist(TaperSample$HOM,
+             breaks = seq(1.3,7.9,0.2),
+             col="black",border="white", xlab = "HOM")
+        
+        # WSG -- neither normal nor lognormal
+        shapiro.test(TaperSample$WSG)
+        shapiro.test(log(TaperSample$WSG))
+        
+        hist(TaperSample$WSG,
+             breaks = seq(0.2,1,0.03),
+             col="black",border="white", xlab = "WSG")
+        
+
+
+    

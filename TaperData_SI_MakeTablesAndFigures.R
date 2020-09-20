@@ -32,20 +32,22 @@
   # Best taper models from model comparison 
   
   # Model 1 (no family effects)
-    model3a <- lme4::lmer(log(b1.iso)~log(DBH) + log(HOM) + log(WSG) + (1|Site), data = TaperSample)
+    model3a.f <- lme4::lmer(b1.iso~log(DBH) + log(HOM) + log(WSG) + (1|Site) + (1|Family), data = TaperSample)
     
-    SiteCoefs1 <- data.frame(Group=c(rownames(coef(model3a)[[1]])),
-                             Intercept=c(coef(model3a)[[1]][,1]))
+    FamilyCoefs1 <- data.frame(Group=c(rownames(coef(model3a.f)[[1]])),
+                               Intercept=c(coef(model3a.f)[[1]][,1]))
+    SiteCoefs1 <- data.frame(Group=c(rownames(coef(model3a.f)[[2]])),
+                             Intercept=c(coef(model3a.f)[[2]][,1]))
   
   # Model 2 (with family effects)
-    model3a.f <- lme4::lmer(log(b1.iso)~log(DBH) + log(HOM) + log(WSG) + (1|Site) + (1|Family), data = TaperSample)
+    model2a.f <- lme4::lmer(b1.iso~log(DBH) + log(HOM) + (1|Site) + (1|Family), data = TaperSample)
     
-    FamilyCoefs2 <- data.frame(Group=c(rownames(coef(model3a.f)[[1]])),
-                               Intercept=c(coef(model3a.f)[[1]][,1]))
-    SiteCoefs2 <- data.frame(Group=c(rownames(coef(model3a.f)[[2]])),
-                             Intercept=c(coef(model3a.f)[[2]][,1]))
+    FamilyCoefs2 <- data.frame(Group=c(rownames(coef(model2a.f)[[1]])),
+                               Intercept=c(coef(model2a.f)[[1]][,1]))
+    SiteCoefs2 <- data.frame(Group=c(rownames(coef(model2a.f)[[2]])),
+                             Intercept=c(coef(model2a.f)[[2]][,1]))
     
-    write.csv(rbind(SiteCoefs1,FamilyCoefs2,SiteCoefs2), row.names = F, file="TablesS5and6_RandomIntercepts.csv")
+    write.csv(rbind(SiteCoefs1,FamilyCoefs1,SiteCoefs2,FamilyCoefs2), row.names = F, file="TablesS5and6_RandomIntercepts.csv")
 
 ###### Table S7:Circularity values by family #####
   # Make a data frame with trees with circularity measurement at the HOM
@@ -380,83 +382,79 @@
 ###### Figure S6: Distribution of model residuals #####
   
   # Read in data file for taper parameter sample and define the taper model used in the biomass estimation routine
-  model3a <- lme4::lmer(log(b1.iso)~log(DBH) + log(HOM) + log(WSG) + (1|Site), data = TaperSample)
-  model3a.f <- lme4::lmer(log(b1.iso)~log(DBH) + log(HOM) + log(WSG) + (1|Site) + (1|Family), data = TaperSample)
+  model3a.f <- lme4::lmer(b1.iso~log(DBH) + log(HOM) + log(WSG) + (1|Site) + (1|Family), data = TaperSample)
+  model2a.f <- lme4::lmer(b1.iso~log(DBH) + log(HOM) + (1|Site) + (1|Family), data = TaperSample)
 
-tiff(width=7, height=10, file="FigureS6_DistributionOfModelResiduals.tiff",res=300,units="in")
-  par(mfrow=c(4,2),mar=c(4,3,1,1),oma = c(0,1,0,0), family="sans")
-
+  tiff(width=7, height=7.5, file="FigureS6_DistributionOfModelResiduals.tiff",res=300,units="in")
+  par(mfrow=c(3,3),mar=c(4,3,1,1),oma = c(0,3,0,0), family="sans")
+  
   # NO family fixed effects
-  plot(x=fitted(model3a),
-       y=residuals(model3a),
-       xlab=NA, ylab=NA,
-       pch=20, col=adjustcolor("black",alpha.f=0.5),
-       cex=1.2, cex.axis=1.5)
-    mtext("Fitted value", side=1, line=2)
-    mtext("Residual", side=2, line=2)
-    text("a", x=-4.4, y=1.4, cex=1.4)
-  
-  plot(x=model3a@frame$`log(DBH)`,
-       y=residuals(model3a),
-       xlab=NA, ylab= NA,
-       pch=20, col=adjustcolor("black",alpha.f=0.5),
-       cex=1.2, cex.axis=1.5)
-    mtext("log(DAB)", side=1, line=2)
-    text("b", x=3, y=1.4, cex=1.4)
-    
-  plot(x=model3a@frame$`log(HOM)`,
-       y=residuals(model3a),
-       xlab=NA, ylab= NA,
-       pch=20, col=adjustcolor("black",alpha.f=0.5),
-       cex=1.2, cex.axis=1.5)
-    mtext("log(HOM)", side=1, line=2)
-    mtext("Residual", side=2, line=2)
-    text("c", x=0.45, y=1.4, cex=1.4)
-
-  plot(x=model3a@frame$`log(WSG)`,
-       y=residuals(model3a),
-       xlab=NA, ylab= NA,
-       pch=20, col=adjustcolor("black",alpha.f=0.5),
-       cex=1.2, cex.axis=1.5)
-    mtext("log(WSG)", side=1, line=2)
-    text("d", x=-1.3, y=1.4, cex=1.4)
-  
-  # WITH family fixed effects    
   plot(x=fitted(model3a.f),
        y=residuals(model3a.f),
        xlab=NA, ylab=NA,
        pch=20, col=adjustcolor("black",alpha.f=0.5),
        cex=1.2, cex.axis=1.5)
-    mtext("Fitted value", side=1, line=2)
-    mtext("Residual", side=2, line=2)
-    text("e", x=-4.4, y=1.4, cex=1.4)
+  mtext("Fitted value", side=1, line=2)
+  mtext("Residual value", side=2, outer=T)
+  abline(h=0,lty=2)
+  text("a", x=0, y=0.07, cex=1.4)
   
   plot(x=model3a.f@frame$`log(DBH)`,
        y=residuals(model3a.f),
        xlab=NA, ylab= NA,
        pch=20, col=adjustcolor("black",alpha.f=0.5),
        cex=1.2, cex.axis=1.5)
-    mtext("log(DAB)", side=1, line=2)
-    text("f", x=3, y=1.4, cex=1.4)
-    
+  mtext("log(DAB)", side=1, line=2)
+  text("b", x=3, y=0.07, cex=1.4)
+  abline(h=0,lty=2)
+  
   plot(x=model3a.f@frame$`log(HOM)`,
        y=residuals(model3a.f),
        xlab=NA, ylab= NA,
        pch=20, col=adjustcolor("black",alpha.f=0.5),
        cex=1.2, cex.axis=1.5)
-    mtext("log(HOM)", side=1, line=2)
-    mtext("Residual", side=2, line=2)
-    text("g", x=0.45, y=1.4, cex=1.4)
-
+  mtext("log(HOM)", side=1, line=2)
+  text("c", x=0.4, y=0.07, cex=1.4)
+  abline(h=0,lty=2)
+  
   plot(x=model3a.f@frame$`log(WSG)`,
        y=residuals(model3a.f),
        xlab=NA, ylab= NA,
        pch=20, col=adjustcolor("black",alpha.f=0.5),
        cex=1.2, cex.axis=1.5)
-    mtext("log(WSG)", side=1, line=2)
-    text("h", x=-1.3, y=1.4, cex=1.4)
-
-dev.off()
+  mtext("log(WSG)", side=1, line=2)
+  text("d", x=-1.3, y=0.07, cex=1.4)
+  abline(h=0,lty=2)
+  
+  # Model 2
+  plot(x=fitted(model2a.f),
+       y=residuals(model2a.f),
+       xlab=NA, ylab=NA,
+       pch=20, col=adjustcolor("black",alpha.f=0.5),
+       cex=1.2, cex.axis=1.5)
+  mtext("Fitted value", side=1, line=2)
+  abline(h=0,lty=2)
+  text("e", x=0.003, y=0.07, cex=1.4)
+  
+  plot(x=model2a.f@frame$`log(DBH)`,
+       y=residuals(model2a.f),
+       xlab=NA, ylab= NA,
+       pch=20, col=adjustcolor("black",alpha.f=0.5),
+       cex=1.2, cex.axis=1.5)
+  mtext("log(DAB)", side=1, line=2)
+  text("f", x=3, y=0.07, cex=1.4)
+  abline(h=0,lty=2)
+  
+  plot(x=model2a.f@frame$`log(HOM)`,
+       y=residuals(model2a.f),
+       xlab=NA, ylab= NA,
+       pch=20, col=adjustcolor("black",alpha.f=0.5),
+       cex=1.2, cex.axis=1.5)
+  mtext("log(HOM)", side=1, line=2)
+  text("g", x=0.4, y=0.07, cex=1.4)
+  abline(h=0,lty=2)
+  
+  dev.off()
 
 ###### Figure S7: Nonstandard measurement heights for trees >= 30 cm ######
   HOM.results <- read.csv("Data file_HOMresultsPerPlot30.csv")

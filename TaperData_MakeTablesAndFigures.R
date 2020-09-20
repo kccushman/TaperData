@@ -22,64 +22,81 @@
 #### Figure 2 : Variation of taper parameter with tree qualities ####
   TaperSample <- read.csv("DataFile_TaperParameterSample.csv")
 
-  cexAx <- 1
-  axisSize <- 0.8
-  textCex <- 1.2
+  cexAx <- 1.2
+  axisSize <- 1
+  textCex <- 1.4
   
-  tiff(file="Figure2_TaperParameterVariation.tiff", height=2.3, width=6, units="in", res=300)
+  tiff(file="Figure2_TaperParameterVariation.tiff", height=3, width=8, units="in", res=300)
     par(mfrow=c(1,3), mar=c(4,2,0,0), xpd=F,family="sans", las=1, oma=c(0,5,1,1))
 
-    plot(log(b1.iso)~log(DBH), data=TaperSample, type='n',
-         ylim=range(log(TaperSample$b1.iso),na.rm=T)+c(0,1),
+    plot(b1.iso~DBH, data=TaperSample, type='n',
+         ylim=range(TaperSample$b1.iso,na.rm=T),
+         log="x",
          xlab=NA, ylab=NA,
          cex.axis=cexAx)
-    mtext("log DAB (cm)", side=1, line=2.2, cex=axisSize)
-    mtext("log taper \nparameter", side=2, line=2, cex=axisSize)
-    text(x=3,y=-1.1,"a", cex=textCex+0.1)
-    for(i in 1:length(sites)){
-      points(log(b1.iso)~log(DBH), data=TaperSample[TaperSample$Site==sites[i],],
-             col=site.cols[site.cols$site==sites[i],"col"], pch=20)
-    }
-    taperDABlm <- lme4::lmer(log(b1.iso)~log(DBH) + (1|Site), data = TaperSample)
-    abline(a=summary(taperDABlm)$coefficients[1,1], b=summary(taperDABlm)$coefficients[2,1])
+    mtext("DAB (cm)", side=1, line=2.2, cex=axisSize)
+    mtext("taper \nparameter", side=2, line=7, cex=axisSize, adj=0)
+    text(x=19,y=0.15,"a", cex=textCex+0.1)
     
-        legend(x=2.8, y=-5.7,bty='n',
+    taperDABlm <- lme4::lmer(b1.iso~log(DBH) + (1|Site), data = TaperSample)
+    for(i in 1:length(sites)){
+      points(b1.iso~DBH, data=TaperSample[TaperSample$Site==sites[i],],
+             col=site.cols[site.cols$site==sites[i],"col"], pch=20)
+      xrange=seq(from=min(TaperSample[TaperSample$Site==sites[i],"DBH"]),
+                 to=max(TaperSample[TaperSample$Site==sites[i],"DBH"]),0.1)
+      ypred=predict(taperDABlm,newdata=data.frame(DBH=xrange, Site=sites[i]))
+      lines(x=xrange,y=ypred, col=site.cols[site.cols$site==sites[i],"col"],
+            lwd=2)
+    }
+
+        legend(x=17, y=0,bty='n',
            sitesNames,
            col=site.cols$col,
-           cex=cexAx-0.25,
+           cex=0.9,
            pch=19)
         
-    plot(log(b1.iso)~log(HOM), data=TaperSample, type='n',
-         ylim=range(log(TaperSample$b1.iso),na.rm=T)+c(0,1),
+    plot(b1.iso~HOM, data=TaperSample, type='n',
+         ylim=range(TaperSample$b1.iso,na.rm=T),
          xlab=NA,ylab=NA,
          yaxt='n',
+         log="x",
          cex.axis=cexAx)
-  mtext("log HOM (cm)", side=1, line=2.2, cex=axisSize)
-  text(x=0.45,y=-1.1,"b", cex=textCex+0.1)
-    for(i in  1:length(sites)){
-      points(log(b1.iso)~log(HOM), data=TaperSample[TaperSample$Site==sites[i],],
-             col=site.cols[site.cols$site==sites[i],"col"], pch=20)
-    }
-    taperHOMlm <- lme4::lmer(log(b1.iso)~log(HOM) + (1|Site), data = TaperSample)
-    abline(a=summary(taperHOMlm)$coefficients[1,1], b=summary(taperHOMlm)$coefficients[2,1])
-    
-    plot(log(b1.iso)~log(WSG), data=TaperSample, type='n',
-         ylim=range(log(TaperSample$b1.iso),na.rm=T)+c(0,1),
-         xlab=NA, ylab=NA,yaxt='n',
-         cex.axis=cexAx)
-    mtext("log WSG (cm)", side=1, line=2.2, cex=axisSize)
-    text(x=-1.25,y=-1.1,"c", cex=textCex+0.1)
+  mtext("HOM (cm)", side=1, line=2.2, cex=axisSize)
+  text(x=1.47,y=0.15,"b", cex=textCex+0.1)
+    taperHOMlm <- lme4::lmer(b1.iso~log(HOM) + (1|Site), data = TaperSample)
     for(i in 1:length(sites)){
-      points(log(b1.iso)~log(WSG), data=TaperSample[TaperSample$Site==sites[i],],
+      points(b1.iso~HOM, data=TaperSample[TaperSample$Site==sites[i],],
              col=site.cols[site.cols$site==sites[i],"col"], pch=20)
+      xrange=seq(from=min(TaperSample[TaperSample$Site==sites[i],"HOM"]),
+                 to=max(TaperSample[TaperSample$Site==sites[i],"HOM"]),0.1)
+      ypred=predict(taperHOMlm,newdata=data.frame(HOM=xrange, Site=sites[i]))
+      lines(x=xrange,y=ypred, col=site.cols[site.cols$site==sites[i],"col"],
+            lwd=2)
     }
-    taperWSGlm <- lme4::lmer(log(b1.iso)~log(WSG) + (1|Site), data = TaperSample)
-    abline(a=summary(taperWSGlm)$coefficients[1,1], b=summary(taperWSGlm)$coefficients[2,1])
-
+    
+    plot(b1.iso~WSG, data=TaperSample, type='n',
+         ylim=range(TaperSample$b1.iso,na.rm=T),
+         xlab=NA,ylab=NA,
+         yaxt='n',
+         log="x",
+         cex.axis=cexAx)
+  mtext("WSG (cm)", side=1, line=2.2, cex=axisSize)
+  text(x=0.28,y=0.15,"c", cex=textCex+0.1)
+    taperWSGlm <- lme4::lmer(b1.iso~log(WSG) + (1|Site), data = TaperSample)
+    for(i in 1:length(sites)){
+      points(b1.iso~WSG, data=TaperSample[TaperSample$Site==sites[i],],
+             col=site.cols[site.cols$site==sites[i],"col"], pch=20)
+      xrange=seq(from=min(TaperSample[TaperSample$Site==sites[i],"WSG"]),
+                 to=max(TaperSample[TaperSample$Site==sites[i],"WSG"]),0.1)
+      ypred=predict(taperWSGlm,newdata=data.frame(WSG=xrange, Site=sites[i]))
+      lines(x=xrange,y=ypred, col=site.cols[site.cols$site==sites[i],"col"],
+            lwd=2)
+   }
+    
   dev.off()  
 
 
-#### Figure 3: Trunk circularity for each site #####
+#### Figure 3: CDFs for taper and circularity for each site #####
   # Calculate empirical cumulative distribution functions for each plot
     CircSample <- TreeSample[!is.na(TreeSample$iso),]
 
@@ -88,6 +105,12 @@
     BKT.circCDF <- Hmisc::Ecdf(CircSample[CircSample$Site=='BKT','iso'])
     HKK.circCDF <- Hmisc::Ecdf(CircSample[CircSample$Site=='HKK','iso'])
     KCH.circCDF <- Hmisc::Ecdf(CircSample[CircSample$Site=='KCH','iso'])
+    
+    AMA.taperCDF <- Hmisc::Ecdf(TaperSample[TaperSample$Site=='AMA','b1.iso'])
+    BCI.taperCDF <- Hmisc::Ecdf(TaperSample[TaperSample$Site=='BCI','b1.iso'])
+    BKT.taperCDF <- Hmisc::Ecdf(TaperSample[TaperSample$Site=='BKT','b1.iso'])
+    HKK.taperCDF <- Hmisc::Ecdf(TaperSample[TaperSample$Site=='HKK','b1.iso'])
+    KCH.taperCDF <- Hmisc::Ecdf(TaperSample[TaperSample$Site=='KCH','b1.iso'])
     
     # Fifth percentile
     AMA.circCDF[[1]][AMA.circCDF[[2]]>0.05][1]
@@ -103,14 +126,37 @@
     HKK.circCDF[[1]][HKK.circCDF[[2]]>=0.5][1]
     KCH.circCDF[[1]][KCH.circCDF[[2]]>=0.5][1]
     
-    tiff(width=5, height=4, file="Figure3_TrunkCircularityECDFs.tiff",res=300,units="in")
+    tiff(width=8, height=4, file="Figure3_TrunkTaperCircularityECDFs.tiff",res=300,units="in")
       
-     par(xpd=F,family="sans", las=1, oma=c(1,4,0,0), mar=c(3,4,1,1))
+     par(xpd=F,family="sans", mfrow=c(1,2), las=1, oma=c(1,4,0,0), mar=c(3,4,1,1))
+     
     plot(0,type='n',
+           xlim=range(TaperSample$b1.iso),
+           ylim=c(0.01,1),
+           xlab=NA,ylab=NA)
+      # Plot ECDF for each site
+        lines(AMA.taperCDF, col=site.cols[site.cols$site=="AMA","col"], lwd=2)
+        lines(BCI.taperCDF, col=site.cols[site.cols$site=="BCI","col"], lwd=2)
+        lines(BKT.taperCDF, col=site.cols[site.cols$site=="BKT","col"], lwd=2)
+        lines(HKK.taperCDF, col=site.cols[site.cols$site=="HKK","col"], lwd=2)
+        lines(KCH.taperCDF, col=site.cols[site.cols$site=="KCH","col"], lwd=2)
+      abline(h=1,lty=2)
+      abline(h=0.5,lty=1)
+      text("a",x=-0.06,y=0.95)
+
+      legend(x=0.025,y=0.35,
+             sitesNames[1:5],
+             col=site.cols$col[1:5],
+             bty='n',
+             lwd=2, cex=0.8)
+      mtext("Tree taper parameter (b)", side=1, line=2)
+      mtext("Cumulative\nproportion\nof trees", side=2, line=3.5)
+  
+      
+        plot(0,type='n',
            xlim=range(CircSample$iso),
            ylim=c(0.01,1),
-           xlab=NA,ylab=NA,
-           log='y')
+           xlab=NA,ylab=NA)
       # Plot ECDF for each site
         lines(AMA.circCDF, col=site.cols[site.cols$site=="AMA","col"], lwd=2)
         lines(BCI.circCDF, col=site.cols[site.cols$site=="BCI","col"], lwd=2)
@@ -119,19 +165,9 @@
         lines(KCH.circCDF, col=site.cols[site.cols$site=="KCH","col"], lwd=2)
       abline(h=1,lty=2)
       abline(h=0.5,lty=1)
-      # Plot vertical line for mean ciruclarity per site
-        abline(v=mean(CircSample[CircSample$Site=='AMA','iso']), col=site.cols[site.cols$site=="AMA","col"])
-        abline(v=mean(CircSample[CircSample$Site=='BCI','iso']), col=site.cols[site.cols$site=="BCI","col"])
-        abline(v=mean(CircSample[CircSample$Site=='BKT','iso']), col=site.cols[site.cols$site=="BKT","col"])
-        abline(v=mean(CircSample[CircSample$Site=='HKK','iso']), col=site.cols[site.cols$site=="HKK","col"])
-        abline(v=mean(CircSample[CircSample$Site=='KCH','iso']), col=site.cols[site.cols$site=="KCH","col"])
-      legend(x=0.3,y=0.5,
-             sitesNames[1:5],
-             col=site.cols$col[1:5],
-             bty='n',
-             lwd=2)
+      text("b",x=0.32,y=0.95)
       mtext("Trunk circularity", side=1, line=2)
-      mtext("Cumulative\nproportion\nof trees", side=2, line=3.5)
+      
     dev.off()
     
     Circ.Test1 <- kruskal.test(list(CircSample[CircSample$Site=='AMA','iso'],
@@ -139,10 +175,11 @@
                                     CircSample[CircSample$Site=='BKT','iso'],
                                     CircSample[CircSample$Site=='HKK','iso'],
                                     CircSample[CircSample$Site=='KCH','iso']))
-    Circ.Test2 <- kruskal.test(list(CircSample[CircSample$Site=='AMA','iso'],
-                                    CircSample[CircSample$Site=='BCI','iso'],
-                                    CircSample[CircSample$Site=='HKK','iso'],
-                                    CircSample[CircSample$Site=='KCH','iso']))
+    Circ.Test2 <- kruskal.test(list(CircSample[CircSample$Site=='AMA' & CircSample$DBH>=30,'iso'],
+                                    CircSample[CircSample$Site=='BCI' & CircSample$DBH>=30,'iso'],
+                                    CircSample[CircSample$Site=='BKT' & CircSample$DBH>=30,'iso'],
+                                    CircSample[CircSample$Site=='HKK' & CircSample$DBH>=30,'iso'],
+                                    CircSample[CircSample$Site=='KCH' & CircSample$DBH>=30,'iso']))
     
 #### Figure 4: Proportion of stems measured at nonstandard heights over time at each plot ####
   HOM.results <- read.csv("Data file_HOMresultsPerPlot.csv")
