@@ -623,3 +623,110 @@ TaperSample <- read.csv("DataFile_TaperParameterSample.csv")
 
 
     
+#### Revision edit: Estimate AGB with various models ####
+
+  # Define taper parameters for each scenario
+    # Mean taper
+      b_med <- median(TaperSample$b1.iso)
+      
+    # Full model
+      model3a.f <- lme4::lmer(b1.iso~log(DBH) + log(HOM) + log(WSG) + (1|Site) + (1|Family), data = TaperSample)
+      TaperSample$bFullModel <- fitted(model3a.f)
+      
+    # Simple model  
+      model3a <- lm(b1.iso~log(DBH) + log(HOM) + log(WSG), data = TaperSample)
+      TaperSample$bSimpModel <- fitted(model3a)
+      
+  # Define necessary functions
+      agb.allometry <- function(E,wsg,dbh) {exp(-1.803-0.976*E+0.976*log(wsg)
+                                                + 2.673*log(dbh) - 0.0299*(log(dbh)^2))}
+      
+      taper.eqn <- function(d,h,b1) {d/(exp(-b1*(h-1.3)))}
+        
+  # Calculate AGB with various taper scenarios
+      
+    # AGB with measured taper
+      TaperSample$EDBH_MeasTaper <- taper.eqn(d = TaperSample$DBH,
+                                              h = TaperSample$HOM,
+                                              b1 = TaperSample$b1.iso)
+      TaperSample$AGB_MeasTaper <- agb.allometry(E = TaperSample$E,
+                                                 wsg = TaperSample$WSG,
+                                                 dbh = TaperSample$EDBH_MeasTaper)
+        
+    # AGB with mean taper
+      TaperSample$EDBH_MedTaper <- taper.eqn(d = TaperSample$DBH,
+                                             h = TaperSample$HOM,
+                                             b1 = b_med)
+      TaperSample$AGB_MedTaper <- agb.allometry(E = TaperSample$E,
+                                                wsg = TaperSample$WSG,
+                                                dbh = TaperSample$EDBH_MedTaper)
+        
+    # AGB with full model taper
+      TaperSample$EDBH_ModelTaperFull <- taper.eqn(d = TaperSample$DBH,
+                                                   h = TaperSample$HOM,
+                                                   b1 = TaperSample$bFullModel)
+      TaperSample$AGB_ModelTaperFull <- agb.allometry(E = TaperSample$E,
+                                                      wsg = TaperSample$WSG,
+                                                      dbh = TaperSample$EDBH_ModelTaperFull)
+      
+     # AGB with simple model taper
+      TaperSample$EDBH_ModelTaperSimp <- taper.eqn(d = TaperSample$DBH,
+                                                   h = TaperSample$HOM,
+                                                   b1 = TaperSample$bSimpModel)
+      TaperSample$AGB_ModelTaperSimp <- agb.allometry(E = TaperSample$E,
+                                                      wsg = TaperSample$WSG,
+                                                      dbh = TaperSample$EDBH_ModelTaperSimp)
+      
+  # Summarize results
+    AGB_Results <- data.frame(site=sites,
+                              AGB_Uncorrected=NA,
+                              AGB_MeasTaper=NA,
+                              AGB_ModelTaperFull=NA,
+                              AGB_ModelTaperSimp=NA,
+                              AGB_MedTaper=NA,
+                              AGB_MeasTaperStd=NA,
+                              AGB_ModelTaperFullStd=NA,
+                              AGB_ModelTaperSimpStd=NA,
+                              AGB_MedTaperStd=NA)
+    
+    for(i in 1:length(sites)){
+      AGB_Results$AGB_Uncorrected[i] <- sum(TaperSample[TaperSample$Site==sites[i],"AGB"])
+      AGB_Results$AGB_MeasTaper[i] <- sum(TaperSample[TaperSample$Site==sites[i],"AGB_MeasTaper"])
+      AGB_Results$AGB_ModelTaperFull[i] <- sum(TaperSample[TaperSample$Site==sites[i],"AGB_ModelTaperFull"])
+      AGB_Results$AGB_ModelTaperSimp[i] <- sum(TaperSample[TaperSample$Site==sites[i],"AGB_ModelTaperSimp"])
+      AGB_Results$AGB_MedTaper[i] <- sum(TaperSample[TaperSample$Site==sites[i],"AGB_MedTaper"])
+    }
+    
+    # Calculate standardized values -- compared to uncorrected data
+    AGB_Results$AGB_MeasTaperStd <- AGB_Results$AGB_MeasTaper/AGB_Results$AGB_Uncorrected
+    AGB_Results$AGB_ModelTaperFullStd <- AGB_Results$AGB_ModelTaperFull/AGB_Results$AGB_Uncorrected
+    AGB_Results$AGB_ModelTaperSimpStd <- AGB_Results$AGB_ModelTaperSimp/AGB_Results$AGB_Uncorrected
+    AGB_Results$AGB_MedTaperStd <- AGB_Results$AGB_MedTaper/AGB_Results$AGB_Uncorrected
+    
+    # Calculate standardized values -- compared to measured taper
+    AGB_Results$AGB_MeasTaperStd <- AGB_Results$AGB_MeasTaper/AGB_Results$AGB_MeasTaper
+    AGB_Results$AGB_ModelTaperFullStd <- AGB_Results$AGB_ModelTaperFull/AGB_Results$AGB_MeasTaper
+    AGB_Results$AGB_ModelTaperSimpStd <- AGB_Results$AGB_ModelTaperSimp/AGB_Results$AGB_MeasTaper
+    AGB_Results$AGB_MedTaperStd <- AGB_Results$AGB_MedTaper/AGB_Results$AGB_MeasTaper
+    
+    barplot(as.matrix(t(AGB_Results[,c("AGB_MeasTaperStd",
+                                       "AGB_ModelTaperFullStd",
+                                       "AGB_ModelTaperSimpStd",
+                                       "AGB_MedTaperStd")])),
+            beside=T,
+            ylim=c(0,1.8),
+            names.arg = sitesNames,
+            col=c("#2b8cbe","#7bccc4","#bae4bc","grey"))
+    abline(h=1,lty=2)
+    legend(x=0,y=1.9,
+           c("Measured taper",
+             "Simple model",
+             "Full model",
+             "Median taper"),
+           y.intersp = 0.7,
+           fill=c("#2b8cbe","#7bccc4","#bae4bc","grey"),
+           bty="n")
+    
+    
+
+        
