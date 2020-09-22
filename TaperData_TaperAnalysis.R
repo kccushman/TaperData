@@ -720,8 +720,8 @@ TaperSample <- read.csv("DataFile_TaperParameterSample.csv")
     abline(h=1,lty=2)
     legend(x=0,y=1.9,
            c("Measured taper",
-             "Simple model",
              "Full model",
+             "Simple model",
              "Median taper"),
            y.intersp = 0.7,
            fill=c("#2b8cbe","#7bccc4","#bae4bc","grey"),
