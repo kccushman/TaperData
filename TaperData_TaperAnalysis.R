@@ -1,6 +1,11 @@
 ## NOTE: if working from the current Git repository, then workflow will function from step 2.
 TaperSample <- read.csv("DataFile_TaperParameterSample.csv")
-
+sites <- c("AMA","BCI","BKT","HKK","KCH")
+  sitesNames <- c("Amacayacu",
+                  "Barro Colorado",
+                  "Bukit Timah",
+                  "Huai Kha Khaeng",
+                  "Khao Chong")
 
 # Load needed packages ### left for refernce; replaced with package::function notation throughout. 
   # library(splancs)
@@ -624,26 +629,26 @@ TaperSample <- read.csv("DataFile_TaperParameterSample.csv")
 
     
 #### Revision edit: Estimate AGB with various models ####
-
-  # Define taper parameters for each scenario
-    # Mean taper
-      b_med <- median(TaperSample$b1.iso)
-      
-    # Full model
-      model3a.f <- lme4::lmer(b1.iso~log(DBH) + log(HOM) + log(WSG) + (1|Site) + (1|Family), data = TaperSample)
-      TaperSample$bFullModel <- fitted(model3a.f)
-      
-    # Simple model  
-      model3a <- lm(b1.iso~log(DBH) + log(HOM) + log(WSG), data = TaperSample)
-      TaperSample$bSimpModel <- fitted(model3a)
-      
-  # Define necessary functions
-      agb.allometry <- function(E,wsg,dbh) {exp(-1.803-0.976*E+0.976*log(wsg)
-                                                + 2.673*log(dbh) - 0.0299*(log(dbh)^2))}
-      
-      taper.eqn <- function(d,h,b1) {d/(exp(-b1*(h-1.3)))}
         
+  # Define necessary functions
+    agb.allometry <- function(E,wsg,dbh) {exp(-1.803-0.976*E+0.976*log(wsg)
+                                              + 2.673*log(dbh) - 0.0299*(log(dbh)^2))}
+    
+    taper.eqn <- function(d,h,b1) {d/(exp(-b1*(h-1.3)))}
+    
+  # Add E for each site
+      TaperSample$E <- NA
+      TaperSample[TaperSample$Site=="AMA","E"] <- -0.07928769
+      TaperSample[TaperSample$Site=="BCI","E"] <- 0.04944549
+      TaperSample[TaperSample$Site=="BKT","E"] <- -0.05956875
+      TaperSample[TaperSample$Site=="HKK","E"] <- 0.3194663
+      TaperSample[TaperSample$Site=="KCH","E"] <- 0.04786947
+      
   # Calculate AGB with various taper scenarios
+    # Uncorrected AGB
+      TaperSample$AGB_Uncorected <- agb.allometry(E = TaperSample$E,
+                                                 wsg = TaperSample$WSG,
+                                                 dbh = TaperSample$DBH)
       
     # AGB with measured taper
       TaperSample$EDBH_MeasTaper <- taper.eqn(d = TaperSample$DBH,
@@ -651,82 +656,425 @@ TaperSample <- read.csv("DataFile_TaperParameterSample.csv")
                                               b1 = TaperSample$b1.iso)
       TaperSample$AGB_MeasTaper <- agb.allometry(E = TaperSample$E,
                                                  wsg = TaperSample$WSG,
-                                                 dbh = TaperSample$EDBH_MeasTaper)
+                                                 dbh = TaperSample$EDBH_MeasTaper)    
         
-    # AGB with mean taper
-      TaperSample$EDBH_MedTaper <- taper.eqn(d = TaperSample$DBH,
-                                             h = TaperSample$HOM,
-                                             b1 = b_med)
-      TaperSample$AGB_MedTaper <- agb.allometry(E = TaperSample$E,
-                                                wsg = TaperSample$WSG,
-                                                dbh = TaperSample$EDBH_MedTaper)
+  # For each site, use bootstrapping to estimate AGB with CI's under various scenarios
+    nboot <- 1000
+    
+    # Amacayacu
+    
+        AGB_AMA <- data.frame(sample = 1:nboot,
+                          AGB_FullModel = NA,
+                          AGB_SimpModel = NA,
+                          AGB_MedTaper = NA,
+                          b_med = NA)
         
-    # AGB with full model taper
-      TaperSample$EDBH_ModelTaperFull <- taper.eqn(d = TaperSample$DBH,
-                                                   h = TaperSample$HOM,
-                                                   b1 = TaperSample$bFullModel)
-      TaperSample$AGB_ModelTaperFull <- agb.allometry(E = TaperSample$E,
-                                                      wsg = TaperSample$WSG,
-                                                      dbh = TaperSample$EDBH_ModelTaperFull)
-      
-     # AGB with simple model taper
-      TaperSample$EDBH_ModelTaperSimp <- taper.eqn(d = TaperSample$DBH,
-                                                   h = TaperSample$HOM,
-                                                   b1 = TaperSample$bSimpModel)
-      TaperSample$AGB_ModelTaperSimp <- agb.allometry(E = TaperSample$E,
-                                                      wsg = TaperSample$WSG,
-                                                      dbh = TaperSample$EDBH_ModelTaperSimp)
-      
+        set.seed(1)
+        for(i in 1:nboot){
+          data.site <- TaperSample[TaperSample$Site=="AMA",]
+          
+          # Full taper model
+          sample.full <- sample(x = 1:dim(TaperSample)[1],
+                                size = dim(TaperSample)[1],
+                                replace = T)
+          data.full <- TaperSample[sample.full,]
+          model.full <- lme4::lmer(b1.iso~log(DBH) + log(HOM) + log(WSG) + (1|Site), data = data.full)
+          data.site$b <- predict(model.full, newdata = data.site)
+          data.site$EDBH <- taper.eqn(d = data.site$DBH,
+                                      h = data.site$HOM,
+                                      b1 = data.site$b)
+          data.site$AGB <- agb.allometry(E = data.site$E,
+                                         wsg = data.site$WSG,
+                                         dbh = data.site$EDBH)
+          AGB_AMA$AGB_FullModel[i] <- sum(data.site$AGB)
+          
+          # Simple taper model
+          sample.simple <- sample(x = which(!(TaperSample$Site=="AMA")),
+                                size = dim(TaperSample[!(TaperSample$Site=="AMA"),])[1],
+                                replace = T)
+          data.simple <- TaperSample[sample.simple,]
+          model.simple <- lm(b1.iso~log(DBH) + log(HOM) + log(WSG), data = data.full)
+          data.site$b <- predict(model.simple, newdata = data.site)
+          data.site$EDBH <- taper.eqn(d = data.site$DBH,
+                                      h = data.site$HOM,
+                                      b1 = data.site$b)
+          data.site$AGB <- agb.allometry(E = data.site$E,
+                                         wsg = data.site$WSG,
+                                         dbh = data.site$EDBH)
+          AGB_AMA$AGB_SimpModel[i] <- sum(data.site$AGB)
+          
+          # "Median" taper value--tree where half of AGB is from smaller trees
+          data.full <- data.full[order(data.full$AGB_MeasTaper),]
+          data.full$CmAGB <- NA
+          for(j in 1:dim(data.full)[1]){
+            data.full$CmAGB[j] <- sum(data.full$AGB_MeasTaper[1:j])
+          }
+          
+          medDBH <- data.full[data.full$CmAGB > sum(data.full$AGB_MeasTaper)/2,"DBH"][1]
+          model.DAB <- lm(b1.iso~log(DBH), data = data.full)
+          b_med <- predict(model.DAB, newdata = data.frame(DBH = medDBH))
+          data.site$EDBH <- taper.eqn(d = data.site$DBH,
+                                      h = data.site$HOM,
+                                      b1 = b_med)
+          data.site$AGB <- agb.allometry(E = data.site$E,
+                                         wsg = data.site$WSG,
+                                         dbh = data.site$EDBH)
+          AGB_AMA$AGB_MedTaper[i] <- sum(data.site$AGB)
+          AGB_AMA$b_med[i] <- b_med
+        }
+
+    # Barro Colorado
+    
+        AGB_BCI <- data.frame(sample = 1:nboot,
+                          AGB_FullModel = NA,
+                          AGB_SimpModel = NA,
+                          AGB_MedTaper = NA,
+                          b_med = NA)
+        
+        set.seed(1)
+        for(i in 1:nboot){
+          data.site <- TaperSample[TaperSample$Site=="BCI",]
+          
+          # Full taper model
+          sample.full <- sample(x = 1:dim(TaperSample)[1],
+                                size = dim(TaperSample)[1],
+                                replace = T)
+          data.full <- TaperSample[sample.full,]
+          model.full <- lme4::lmer(b1.iso~log(DBH) + log(HOM) + log(WSG) + (1|Site), data = data.full)
+          data.site$b <- predict(model.full, newdata = data.site)
+          data.site$EDBH <- taper.eqn(d = data.site$DBH,
+                                      h = data.site$HOM,
+                                      b1 = data.site$b)
+          data.site$AGB <- agb.allometry(E = data.site$E,
+                                         wsg = data.site$WSG,
+                                         dbh = data.site$EDBH)
+          AGB_BCI$AGB_FullModel[i] <- sum(data.site$AGB)
+          
+          # Simple taper model
+          sample.simple <- sample(x = which(!(TaperSample$Site=="BCI")),
+                                size = dim(TaperSample[!(TaperSample$Site=="BCI"),])[1],
+                                replace = T)
+          data.simple <- TaperSample[sample.simple,]
+          model.simple <- lm(b1.iso~log(DBH) + log(HOM) + log(WSG), data = data.full)
+          data.site$b <- predict(model.simple, newdata = data.site)
+          data.site$EDBH <- taper.eqn(d = data.site$DBH,
+                                      h = data.site$HOM,
+                                      b1 = data.site$b)
+          data.site$AGB <- agb.allometry(E = data.site$E,
+                                         wsg = data.site$WSG,
+                                         dbh = data.site$EDBH)
+          AGB_BCI$AGB_SimpModel[i] <- sum(data.site$AGB)
+          
+          # "Median" taper value--tree where half of AGB is from smaller trees
+          data.full <- data.full[order(data.full$AGB_MeasTaper),]
+          data.full$CmAGB <- NA
+          for(j in 1:dim(data.full)[1]){
+            data.full$CmAGB[j] <- sum(data.full$AGB_MeasTaper[1:j])
+          }
+          
+          medDBH <- data.full[data.full$CmAGB > sum(data.full$AGB_MeasTaper)/2,"DBH"][1]
+          model.DAB <- lm(b1.iso~log(DBH), data = data.full)
+          b_med <- predict(model.DAB, newdata = data.frame(DBH = medDBH))
+          data.site$EDBH <- taper.eqn(d = data.site$DBH,
+                                      h = data.site$HOM,
+                                      b1 = b_med)
+          data.site$AGB <- agb.allometry(E = data.site$E,
+                                         wsg = data.site$WSG,
+                                         dbh = data.site$EDBH)
+          AGB_BCI$AGB_MedTaper[i] <- sum(data.site$AGB)
+          AGB_BCI$b_med[i] <- b_med
+        } 
+        
+    # Bukit Timah
+    
+        AGB_BKT <- data.frame(sample = 1:nboot,
+                          AGB_FullModel = NA,
+                          AGB_SimpModel = NA,
+                          AGB_MedTaper = NA,
+                          b_med = NA)
+        
+        set.seed(1)
+        for(i in 1:nboot){
+          data.site <- TaperSample[TaperSample$Site=="BKT",]
+          
+          # Full taper model
+          sample.full <- sample(x = 1:dim(TaperSample)[1],
+                                size = dim(TaperSample)[1],
+                                replace = T)
+          data.full <- TaperSample[sample.full,]
+          model.full <- lme4::lmer(b1.iso~log(DBH) + log(HOM) + log(WSG) + (1|Site), data = data.full)
+          data.site$b <- predict(model.full, newdata = data.site)
+          data.site$EDBH <- taper.eqn(d = data.site$DBH,
+                                      h = data.site$HOM,
+                                      b1 = data.site$b)
+          data.site$AGB <- agb.allometry(E = data.site$E,
+                                         wsg = data.site$WSG,
+                                         dbh = data.site$EDBH)
+          AGB_BKT$AGB_FullModel[i] <- sum(data.site$AGB)
+          
+          # Simple taper model
+          sample.simple <- sample(x = which(!(TaperSample$Site=="BKT")),
+                                size = dim(TaperSample[!(TaperSample$Site=="BKT"),])[1],
+                                replace = T)
+          data.simple <- TaperSample[sample.simple,]
+          model.simple <- lm(b1.iso~log(DBH) + log(HOM) + log(WSG), data = data.full)
+          data.site$b <- predict(model.simple, newdata = data.site)
+          data.site$EDBH <- taper.eqn(d = data.site$DBH,
+                                      h = data.site$HOM,
+                                      b1 = data.site$b)
+          data.site$AGB <- agb.allometry(E = data.site$E,
+                                         wsg = data.site$WSG,
+                                         dbh = data.site$EDBH)
+          AGB_BKT$AGB_SimpModel[i] <- sum(data.site$AGB)
+          
+          # "Median" taper value--tree where half of AGB is from smaller trees
+          data.full <- data.full[order(data.full$AGB_MeasTaper),]
+          data.full$CmAGB <- NA
+          for(j in 1:dim(data.full)[1]){
+            data.full$CmAGB[j] <- sum(data.full$AGB_MeasTaper[1:j])
+          }
+          
+          medDBH <- data.full[data.full$CmAGB > sum(data.full$AGB_MeasTaper)/2,"DBH"][1]
+          model.DAB <- lm(b1.iso~log(DBH), data = data.full)
+          b_med <- predict(model.DAB, newdata = data.frame(DBH = medDBH))
+          data.site$EDBH <- taper.eqn(d = data.site$DBH,
+                                      h = data.site$HOM,
+                                      b1 = b_med)
+          data.site$AGB <- agb.allometry(E = data.site$E,
+                                         wsg = data.site$WSG,
+                                         dbh = data.site$EDBH)
+          AGB_BKT$AGB_MedTaper[i] <- sum(data.site$AGB)
+          AGB_BKT$b_med[i] <- b_med
+        }     
+        
+    # Huai Kha Khaeng
+    
+         AGB_HKK <- data.frame(sample = 1:nboot,
+                          AGB_FullModel = NA,
+                          AGB_SimpModel = NA,
+                          AGB_MedTaper = NA,
+                          b_med = NA)
+        
+        set.seed(1)
+        for(i in 1:nboot){
+          data.site <- TaperSample[TaperSample$Site=="HKK",]
+          
+          # Full taper model
+          sample.full <- sample(x = 1:dim(TaperSample)[1],
+                                size = dim(TaperSample)[1],
+                                replace = T)
+          data.full <- TaperSample[sample.full,]
+          model.full <- lme4::lmer(b1.iso~log(DBH) + log(HOM) + log(WSG) + (1|Site), data = data.full)
+          data.site$b <- predict(model.full, newdata = data.site)
+          data.site$EDBH <- taper.eqn(d = data.site$DBH,
+                                      h = data.site$HOM,
+                                      b1 = data.site$b)
+          data.site$AGB <- agb.allometry(E = data.site$E,
+                                         wsg = data.site$WSG,
+                                         dbh = data.site$EDBH)
+          AGB_HKK$AGB_FullModel[i] <- sum(data.site$AGB)
+          
+          # Simple taper model
+          sample.simple <- sample(x = which(!(TaperSample$Site=="HKK")),
+                                size = dim(TaperSample[!(TaperSample$Site=="HKK"),])[1],
+                                replace = T)
+          data.simple <- TaperSample[sample.simple,]
+          model.simple <- lm(b1.iso~log(DBH) + log(HOM) + log(WSG), data = data.full)
+          data.site$b <- predict(model.simple, newdata = data.site)
+          data.site$EDBH <- taper.eqn(d = data.site$DBH,
+                                      h = data.site$HOM,
+                                      b1 = data.site$b)
+          data.site$AGB <- agb.allometry(E = data.site$E,
+                                         wsg = data.site$WSG,
+                                         dbh = data.site$EDBH)
+          AGB_HKK$AGB_SimpModel[i] <- sum(data.site$AGB)
+          
+          # "Median" taper value--tree where half of AGB is from smaller trees
+          data.full <- data.full[order(data.full$AGB_MeasTaper),]
+          data.full$CmAGB <- NA
+          for(j in 1:dim(data.full)[1]){
+            data.full$CmAGB[j] <- sum(data.full$AGB_MeasTaper[1:j])
+          }
+          
+          medDBH <- data.full[data.full$CmAGB > sum(data.full$AGB_MeasTaper)/2,"DBH"][1]
+          model.DAB <- lm(b1.iso~log(DBH), data = data.full)
+          b_med <- predict(model.DAB, newdata = data.frame(DBH = medDBH))
+          data.site$EDBH <- taper.eqn(d = data.site$DBH,
+                                      h = data.site$HOM,
+                                      b1 = b_med)
+          data.site$AGB <- agb.allometry(E = data.site$E,
+                                         wsg = data.site$WSG,
+                                         dbh = data.site$EDBH)
+          AGB_HKK$AGB_MedTaper[i] <- sum(data.site$AGB)
+          AGB_HKK$b_med[i] <- b_med
+        }    
+        
+    # Khao Chong
+    
+        AGB_KCH <- data.frame(sample = 1:nboot,
+                          AGB_FullModel = NA,
+                          AGB_SimpModel = NA,
+                          AGB_MedTaper = NA,
+                          b_med = NA)
+        
+        set.seed(1)
+        for(i in 1:nboot){
+          data.site <- TaperSample[TaperSample$Site=="KCH",]
+          
+          # Full taper model
+          sample.full <- sample(x = 1:dim(TaperSample)[1],
+                                size = dim(TaperSample)[1],
+                                replace = T)
+          data.full <- TaperSample[sample.full,]
+          model.full <- lme4::lmer(b1.iso~log(DBH) + log(HOM) + log(WSG) + (1|Site), data = data.full)
+          data.site$b <- predict(model.full, newdata = data.site)
+          data.site$EDBH <- taper.eqn(d = data.site$DBH,
+                                      h = data.site$HOM,
+                                      b1 = data.site$b)
+          data.site$AGB <- agb.allometry(E = data.site$E,
+                                         wsg = data.site$WSG,
+                                         dbh = data.site$EDBH)
+          AGB_KCH$AGB_FullModel[i] <- sum(data.site$AGB)
+          
+          # Simple taper model
+          sample.simple <- sample(x = which(!(TaperSample$Site=="KCH")),
+                                size = dim(TaperSample[!(TaperSample$Site=="KCH"),])[1],
+                                replace = T)
+          data.simple <- TaperSample[sample.simple,]
+          model.simple <- lm(b1.iso~log(DBH) + log(HOM) + log(WSG), data = data.full)
+          data.site$b <- predict(model.simple, newdata = data.site)
+          data.site$EDBH <- taper.eqn(d = data.site$DBH,
+                                      h = data.site$HOM,
+                                      b1 = data.site$b)
+          data.site$AGB <- agb.allometry(E = data.site$E,
+                                         wsg = data.site$WSG,
+                                         dbh = data.site$EDBH)
+          AGB_KCH$AGB_SimpModel[i] <- sum(data.site$AGB)
+          
+          # "Median" taper value--tree where half of AGB is from smaller trees
+          data.full <- data.full[order(data.full$AGB_MeasTaper),]
+          data.full$CmAGB <- NA
+          for(j in 1:dim(data.full)[1]){
+            data.full$CmAGB[j] <- sum(data.full$AGB_MeasTaper[1:j])
+          }
+          
+          medDBH <- data.full[data.full$CmAGB > sum(data.full$AGB_MeasTaper)/2,"DBH"][1]
+          model.DAB <- lm(b1.iso~log(DBH), data = data.full)
+          b_med <- predict(model.DAB, newdata = data.frame(DBH = medDBH))
+          data.site$EDBH <- taper.eqn(d = data.site$DBH,
+                                      h = data.site$HOM,
+                                      b1 = b_med)
+          data.site$AGB <- agb.allometry(E = data.site$E,
+                                         wsg = data.site$WSG,
+                                         dbh = data.site$EDBH)
+          AGB_KCH$AGB_MedTaper[i] <- sum(data.site$AGB)
+          AGB_KCH$b_med[i] <- b_med
+        }    
+        
   # Summarize results
+    AGB_list <- list(AGB_AMA, AGB_BCI, AGB_BKT, AGB_HKK, AGB_KCH)    
+    
     AGB_Results <- data.frame(site=sites,
                               AGB_Uncorrected=NA,
                               AGB_MeasTaper=NA,
-                              AGB_ModelTaperFull=NA,
-                              AGB_ModelTaperSimp=NA,
-                              AGB_MedTaper=NA,
+                              AGB_ModelTaperFull_Mean=NA,
+                              AGB_ModelTaperFull_Min95=NA,
+                              AGB_ModelTaperFull_Max95=NA,
+                              AGB_ModelTaperSimp_Mean=NA,
+                              AGB_ModelTaperSimp_Min95=NA,
+                              AGB_ModelTaperSimp_Max95=NA,
+                              AGB_MedTaper_Mean=NA,
+                              AGB_MedTaper_Min95=NA,
+                              AGB_MedTaper_Max95=NA,
                               AGB_MeasTaperStd=NA,
-                              AGB_ModelTaperFullStd=NA,
-                              AGB_ModelTaperSimpStd=NA,
-                              AGB_MedTaperStd=NA)
+                              AGB_ModelTaperFull_MeanStd=NA,
+                              AGB_ModelTaperFull_Min95Std=NA,
+                              AGB_ModelTaperFull_Max95Std=NA,
+                              AGB_ModelTaperSimp_MeanStd=NA,
+                              AGB_ModelTaperSimp_Min95Std=NA,
+                              AGB_ModelTaperSimp_Max95Std=NA,
+                              AGB_MedTaper_MeanStd=NA,
+                              AGB_MedTaper_Min95Std=NA,
+                              AGB_MedTaper_Max95Std=NA)
     
     for(i in 1:length(sites)){
-      AGB_Results$AGB_Uncorrected[i] <- sum(TaperSample[TaperSample$Site==sites[i],"AGB"])
+      AGB_Results$AGB_Uncorrected[i] <- sum(TaperSample[TaperSample$Site==sites[i],"AGB_Uncorected"])
       AGB_Results$AGB_MeasTaper[i] <- sum(TaperSample[TaperSample$Site==sites[i],"AGB_MeasTaper"])
-      AGB_Results$AGB_ModelTaperFull[i] <- sum(TaperSample[TaperSample$Site==sites[i],"AGB_ModelTaperFull"])
-      AGB_Results$AGB_ModelTaperSimp[i] <- sum(TaperSample[TaperSample$Site==sites[i],"AGB_ModelTaperSimp"])
-      AGB_Results$AGB_MedTaper[i] <- sum(TaperSample[TaperSample$Site==sites[i],"AGB_MedTaper"])
+      AGB_Results$AGB_ModelTaperFull_Mean[i] <- mean(AGB_list[[i]]$AGB_FullModel)
+      AGB_Results$AGB_ModelTaperFull_Min95[i] <- quantile((AGB_list[[i]]$AGB_FullModel), 0.025)
+      AGB_Results$AGB_ModelTaperFull_Max95[i] <- quantile((AGB_list[[i]]$AGB_FullModel), 0.975)
+      AGB_Results$AGB_ModelTaperSimp_Mean[i] <- mean(AGB_list[[i]]$AGB_SimpModel)
+      AGB_Results$AGB_ModelTaperSimp_Min95[i] <- quantile((AGB_list[[i]]$AGB_SimpModel), 0.025)
+      AGB_Results$AGB_ModelTaperSimp_Max95[i] <- quantile((AGB_list[[i]]$AGB_SimpModel), 0.975)
+      AGB_Results$AGB_MedTaper_Mean[i] <- mean(AGB_list[[i]]$AGB_MedTaper)
+      AGB_Results$AGB_MedTaper_Min95[i] <- quantile((AGB_list[[i]]$AGB_MedTaper), 0.025)
+      AGB_Results$AGB_MedTaper_Max95[i] <- quantile((AGB_list[[i]]$AGB_MedTaper), 0.975)
     }
     
     # Calculate standardized values -- compared to uncorrected data
-    AGB_Results$AGB_MeasTaperStd <- AGB_Results$AGB_MeasTaper/AGB_Results$AGB_Uncorrected
-    AGB_Results$AGB_ModelTaperFullStd <- AGB_Results$AGB_ModelTaperFull/AGB_Results$AGB_Uncorrected
-    AGB_Results$AGB_ModelTaperSimpStd <- AGB_Results$AGB_ModelTaperSimp/AGB_Results$AGB_Uncorrected
-    AGB_Results$AGB_MedTaperStd <- AGB_Results$AGB_MedTaper/AGB_Results$AGB_Uncorrected
-    
-    # Calculate standardized values -- compared to measured taper
-    AGB_Results$AGB_MeasTaperStd <- AGB_Results$AGB_MeasTaper/AGB_Results$AGB_MeasTaper
-    AGB_Results$AGB_ModelTaperFullStd <- AGB_Results$AGB_ModelTaperFull/AGB_Results$AGB_MeasTaper
-    AGB_Results$AGB_ModelTaperSimpStd <- AGB_Results$AGB_ModelTaperSimp/AGB_Results$AGB_MeasTaper
-    AGB_Results$AGB_MedTaperStd <- AGB_Results$AGB_MedTaper/AGB_Results$AGB_MeasTaper
-    
-    barplot(as.matrix(t(AGB_Results[,c("AGB_MeasTaperStd",
-                                       "AGB_ModelTaperFullStd",
-                                       "AGB_ModelTaperSimpStd",
-                                       "AGB_MedTaperStd")])),
-            beside=T,
-            ylim=c(0,1.8),
-            names.arg = sitesNames,
-            col=c("#2b8cbe","#7bccc4","#bae4bc","grey"))
-    abline(h=1,lty=2)
-    legend(x=0,y=1.9,
+      AGB_Results$AGB_MeasTaperStd <- AGB_Results$AGB_MeasTaper/AGB_Results$AGB_Uncorrected
+      AGB_Results$AGB_ModelTaperFull_MeanStd <- AGB_Results$AGB_ModelTaperFull_Mean/AGB_Results$AGB_Uncorrected
+      AGB_Results$AGB_ModelTaperFull_Min95Std <- AGB_Results$AGB_ModelTaperFull_Min95/AGB_Results$AGB_Uncorrected
+      AGB_Results$AGB_ModelTaperFull_Max95Std <- AGB_Results$AGB_ModelTaperFull_Max95/AGB_Results$AGB_Uncorrected
+      AGB_Results$AGB_ModelTaperSimp_MeanStd <- AGB_Results$AGB_ModelTaperSimp_Mean/AGB_Results$AGB_Uncorrected
+      AGB_Results$AGB_ModelTaperSimp_Min95Std <- AGB_Results$AGB_ModelTaperSimp_Min95/AGB_Results$AGB_Uncorrected
+      AGB_Results$AGB_ModelTaperSimp_Max95Std <- AGB_Results$AGB_ModelTaperSimp_Max95/AGB_Results$AGB_Uncorrected
+      AGB_Results$AGB_MedTaper_MeanStd <- AGB_Results$AGB_MedTaper_Mean/AGB_Results$AGB_Uncorrected
+      AGB_Results$AGB_MedTaper_Min95Std <- AGB_Results$AGB_MedTaper_Min95/AGB_Results$AGB_Uncorrected
+      AGB_Results$AGB_MedTaper_Max95Std <- AGB_Results$AGB_MedTaper_Max95/AGB_Results$AGB_Uncorrected
+
+      
+      plot(x=1:5,
+           y=AGB_Results$AGB_MeasTaperStd,
+           ylab="AGB relative to uncorrected",
+           xlim=c(0.9,5.5),
+           ylim=c(1,1.3),
+           pch=19,
+           col="#2b8cbe",
+           xaxt="na",
+           xlab = NA)
+      # Add full taper model
+      arrows(x0=1:5+0.1, x1=1:5+0.1,
+             y0=AGB_Results$AGB_ModelTaperFull_Min95Std, y1=AGB_Results$AGB_ModelTaperFull_Max95Std,
+             length=0,
+             angle=90,
+             col="#7bccc4",
+             lwd=2)
+      points(x=1:5+0.1, y=AGB_Results$AGB_ModelTaperFull_MeanStd, pch=19, col="#7bccc4")
+      # Add simple taper model
+      arrows(x0=1:5+0.2, x1=1:5+0.2,
+             y0=AGB_Results$AGB_ModelTaperSimp_Min95Std, y1=AGB_Results$AGB_ModelTaperSimp_Max95Std,
+             length=0,
+             angle=90,
+             col="#bae4bc",
+             lwd=2)
+      points(x=1:5+0.2, y=AGB_Results$AGB_ModelTaperSimp_MeanStd, pch=19, col="#bae4bc")
+      # Add "median" taper value
+      arrows(x0=1:5+0.3, x1=1:5+0.3,
+             y0=AGB_Results$AGB_MedTaper_Min95Std, y1=AGB_Results$AGB_MedTaper_Max95Std,
+             length=0,
+             angle=90,
+             col="grey",
+             lwd=2)
+      points(x=1:5+0.3, y=AGB_Results$AGB_MedTaper_MeanStd, pch=19, col="grey")
+      
+      abline(h=1,lty=2)
+      
+    legend(x=3,y=1.33,
            c("Measured taper",
              "Full model",
              "Simple model",
-             "Median taper"),
+             "'Median' taper"),
            y.intersp = 0.7,
-           fill=c("#2b8cbe","#7bccc4","#bae4bc","grey"),
+           pch=19,
+           col=c("#2b8cbe","#7bccc4","#bae4bc","grey"),
            bty="n")
     
+    text(x=1.2,y=1.01,sitesNames[1], cex=0.7)
+    text(x=2.2,y=1.03,sitesNames[2], cex=0.7)
+    text(x=3.2,y=1.01,sitesNames[3], cex=0.7)
+    text(x=4.2,y=1.03,sitesNames[4], cex=0.7)
+    text(x=5.2,y=1.01,sitesNames[5], cex=0.7)
     
 
         
