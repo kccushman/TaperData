@@ -96,78 +96,70 @@
   dev.off()  
 
 
-#### Figure 3: CDFs for taper and circularity for each site #####
-  # Calculate empirical cumulative distribution functions for each plot
-    CircSample <- TreeSample[!is.na(TreeSample$iso),]
-
-    AMA.circCDF <- Hmisc::Ecdf(CircSample[CircSample$Site=='AMA','iso'])
-    BCI.circCDF <- Hmisc::Ecdf(CircSample[CircSample$Site=='BCI','iso'])
-    BKT.circCDF <- Hmisc::Ecdf(CircSample[CircSample$Site=='BKT','iso'])
-    HKK.circCDF <- Hmisc::Ecdf(CircSample[CircSample$Site=='HKK','iso'])
-    KCH.circCDF <- Hmisc::Ecdf(CircSample[CircSample$Site=='KCH','iso'])
-    
-    AMA.taperCDF <- Hmisc::Ecdf(TaperSample[TaperSample$Site=='AMA','b1.iso'])
-    BCI.taperCDF <- Hmisc::Ecdf(TaperSample[TaperSample$Site=='BCI','b1.iso'])
-    BKT.taperCDF <- Hmisc::Ecdf(TaperSample[TaperSample$Site=='BKT','b1.iso'])
-    HKK.taperCDF <- Hmisc::Ecdf(TaperSample[TaperSample$Site=='HKK','b1.iso'])
-    KCH.taperCDF <- Hmisc::Ecdf(TaperSample[TaperSample$Site=='KCH','b1.iso'])
-    
-    # Fifth percentile
-    AMA.circCDF[[1]][AMA.circCDF[[2]]>0.05][1]
-    BCI.circCDF[[1]][BCI.circCDF[[2]]>0.05][1]
-    BKT.circCDF[[1]][BKT.circCDF[[2]]>0.05][1]
-    HKK.circCDF[[1]][HKK.circCDF[[2]]>0.05][1]
-    KCH.circCDF[[1]][KCH.circCDF[[2]]>0.05][1]
-    
-    # Median values
-    AMA.circCDF[[1]][AMA.circCDF[[2]]>=0.5][1]
-    BCI.circCDF[[1]][BCI.circCDF[[2]]>=0.5][1]
-    BKT.circCDF[[1]][BKT.circCDF[[2]]>=0.5][1]
-    HKK.circCDF[[1]][HKK.circCDF[[2]]>=0.5][1]
-    KCH.circCDF[[1]][KCH.circCDF[[2]]>=0.5][1]
-    
-    tiff(width=8, height=4, file="Figure3_TrunkTaperCircularityECDFs.tiff",res=300,units="in")
-      
-     par(xpd=F,family="sans", mfrow=c(1,2), las=1, oma=c(1,4,0,0), mar=c(3,4,1,1))
-     
-    plot(0,type='n',
-           xlim=range(TaperSample$b1.iso),
-           ylim=c(0.01,1),
-           xlab=NA,ylab=NA)
-      # Plot ECDF for each site
-        lines(AMA.taperCDF, col=site.cols[site.cols$site=="AMA","col"], lwd=2)
-        lines(BCI.taperCDF, col=site.cols[site.cols$site=="BCI","col"], lwd=2)
-        lines(BKT.taperCDF, col=site.cols[site.cols$site=="BKT","col"], lwd=2)
-        lines(HKK.taperCDF, col=site.cols[site.cols$site=="HKK","col"], lwd=2)
-        lines(KCH.taperCDF, col=site.cols[site.cols$site=="KCH","col"], lwd=2)
-      abline(h=1,lty=2)
-      abline(h=0.5,lty=1)
-      text("a",x=-0.06,y=0.95)
-
-      legend(x=0.025,y=0.35,
-             sitesNames[1:5],
-             col=site.cols$col[1:5],
-             bty='n',
-             lwd=2, cex=0.8)
-      mtext("Tree taper parameter (b)", side=1, line=2)
-      mtext("Cumulative\nproportion\nof trees", side=2, line=3.5)
+#### Figure 3: Violin plots for taper and circularity for each site #####
+    TaperSample <- read.csv("DataFile_TaperParameterSample.csv")
   
+    CircSample <- read.csv("DataFile_CircSample.csv")
+    
+    load("ForestGEO_CensusData.RData")
+    HomSample <- rbind(AMA.cens[[2]][!duplicated(AMA.cens[[2]]$StemID),], BCI.cens[[6]][!duplicated(BCI.cens[[6]]$StemID),], 
+                    BKT.cens[[1]][!duplicated(BKT.cens[[1]]$StemID),], HKK.cens[[4]][!duplicated(HKK.cens[[4]]$StemID),],
+                    KCH.cens[[3]][!duplicated(KCH.cens[[3]]$StemID),])
+    
+    TaperBySite <- read.csv("TaperVariationTable.csv")
+    CircBySite <- read.csv("CircVariationTable.csv")
+    HOM.results <- read.csv("Data file_HOMresultsPerPlot.csv")
+      HOM.results <- HOM.results[order(HOM.results$Site, -HOM.results$Census),]
+      HOM.results <- HOM.results[!duplicated(HOM.results$Site),]
+  
+    library(ggplot2)
+  
+     taperPlot <- ggplot(TaperSample, aes(x=Site, y=b1.iso, fill=Site)) + 
+       geom_violin(trim=F) +
+       labs(x="", y = "Tree taper parameter (b)") +
+       scale_fill_manual(values = as.character(site.cols$col)) +
+       theme_minimal() +   
+       theme(axis.text.x=element_blank(),
+             axis.title.x=element_blank(),
+             axis.ticks.x=element_blank()) + 
+       #geom_point(data=TaperBySite,aes(x=Site, y = Mean), colour="white", shape=17, show.legend=F) + 
+       #geom_point(data=TaperBySite,aes(x=Site, y = Mean.BA), colour="white", shape=15, show.legend=F) +
+       geom_point(data=TaperBySite,aes(x=Site, y = Mean.AGB), colour="white", shape=19, show.legend=F)
+     
+    circPlot <- ggplot(CircSample, aes(x=Site, y=iso, fill=Site)) + 
+       geom_violin(trim=F) +
+       labs(x="", y = "Tree circularity") +
+       scale_fill_manual(values = as.character(site.cols$col)) +
+       theme_minimal() +   
+       theme(axis.text.x=element_blank(),
+             axis.title.x=element_blank(),
+             axis.ticks.x=element_blank()) + 
+       #geom_point(data=CircBySite,aes(x=Site, y = Mean), colour="white", shape=17, show.legend=F) + 
+       #geom_point(data=CircBySite,aes(x=Site, y = Mean.BA), colour="white", shape=15, show.legend=F) +
+       geom_point(data=CircBySite,aes(x=Site, y = Mean.AGB), colour="white", shape=19, show.legend=F)
+          
+    homPlot <- ggplot(HomSample, aes(x=Site, y=hom, fill=Site)) + 
+      geom_violin(trim=T) +
+      scale_y_log10() +
+      labs(x="", y = "HOM (m)") +
+      scale_fill_manual(values = as.character(site.cols$col)) +
+      theme_minimal() +   
+      theme(axis.text.x=element_blank(),
+            axis.title.x=element_blank(),
+            axis.ticks.x=element_blank()) + 
+      #geom_point(data=HOM.results,aes(x=Site, y = MeanHOM), colour="grey", shape=17, show.legend=F) + 
+      #geom_point(data=HOM.results,aes(x=Site, y = MeanHOM.BA), colour="grey", shape=15, show.legend=F) +
+      geom_point(data=HOM.results,aes(x=Site, y = MeanHOM.AGB), colour="grey", shape=19, show.legend=F)
+    
+    
+    tiff(width=3, height=5, file="Figure3_TrunkTaperCircularityViolins.tiff",res=300,units="in")
       
-        plot(0,type='n',
-           xlim=range(CircSample$iso),
-           ylim=c(0.01,1),
-           xlab=NA,ylab=NA)
-      # Plot ECDF for each site
-        lines(AMA.circCDF, col=site.cols[site.cols$site=="AMA","col"], lwd=2)
-        lines(BCI.circCDF, col=site.cols[site.cols$site=="BCI","col"], lwd=2)
-        lines(BKT.circCDF, col=site.cols[site.cols$site=="BKT","col"], lwd=2)
-        lines(HKK.circCDF, col=site.cols[site.cols$site=="HKK","col"], lwd=2)
-        lines(KCH.circCDF, col=site.cols[site.cols$site=="KCH","col"], lwd=2)
-      abline(h=1,lty=2)
-      abline(h=0.5,lty=1)
-      text("b",x=0.32,y=0.95)
-      mtext("Trunk circularity", side=1, line=2)
-      
+     par(xpd=F,family="sans", mfrow=c(2,1), las=1, oma=c(1,4,0,0), mar=c(3,4,1,1))  
+     
+     cowplot::plot_grid(taperPlot,circPlot,
+                   labels = c("a","b"),
+                   ncol = 1)
+     
     dev.off()
     
     Circ.Test1 <- kruskal.test(list(CircSample[CircSample$Site=='AMA','iso'],
@@ -233,7 +225,7 @@
               y=HOM.results[HOM.results$Site==sites[i],"PropBA"]*100, col=site.cols[site.cols$site==sites[i],"col"], lty=1)
     }
     
-    plot(x=HOM.results$Year,y=HOM.results$MeanHOM,
+    plot(x=HOM.results$Year,y=HOM.results$MeanHOM.AGB,
          type='n',
          ylab=NA,
          xlab=NA,
@@ -243,10 +235,10 @@
     text(x=1990.5,y=3.14,"c", cex=textCex+0.3)
     for(i in 1:length(sites)){
         points(x=HOM.results[HOM.results$Site==sites[i],"Year"],
-               y=HOM.results[HOM.results$Site==sites[i],"MeanHOM"], 
+               y=HOM.results[HOM.results$Site==sites[i],"MeanHOM.AGB"], 
                pch=pchSig[i], col=site.cols[site.cols$site==sites[i],"col"], cex=ptSize)
         lines(x=HOM.results[HOM.results$Site==sites[i],"Year"],
-              y=HOM.results[HOM.results$Site==sites[i],"MeanHOM"], col=site.cols[site.cols$site==sites[i],"col"], lty=1)
+              y=HOM.results[HOM.results$Site==sites[i],"MeanHOM.AGB"], col=site.cols[site.cols$site==sites[i],"col"], lty=1)
     }
   dev.off()
   

@@ -511,30 +511,84 @@
       HOM.HKK <- NonStdProp(CensusData=HKK.cens); HOM.HKK$Site <- "HKK"
       HOM.KCH <- NonStdProp(CensusData=KCH.cens); HOM.KCH$Site <- "KCH"
       
-    # Calculate the biomass-weighted mean HOM for each plot and year
+    # Calculate the mean HOM for each plot and year
       HOM.AMA$MeanHOM <- NA
       for(i in 1:length(AMA.cens)){
-        HOM.AMA$MeanHOM[i] <- weighted.mean(x = AMA.cens[[i]][!duplicated(AMA.cens[[i]]$StemID),"hom"],
-                                            w = AMA.cens[[i]][!duplicated(AMA.cens[[i]]$StemID),"AGB"])
+        HOM.AMA$MeanHOM[i] <- mean(x = AMA.cens[[i]][!duplicated(AMA.cens[[i]]$StemID),"hom"])
       }
       HOM.BCI$MeanHOM <- NA
       for(i in 1:length(BCI.cens)){
-        HOM.BCI$MeanHOM[i] <- weighted.mean(x = BCI.cens[[i]][!duplicated(BCI.cens[[i]]$StemID),"hom"],
-                                            w = BCI.cens[[i]][!duplicated(BCI.cens[[i]]$StemID),"AGB"])
+        HOM.BCI$MeanHOM[i] <- mean(x = BCI.cens[[i]][!duplicated(BCI.cens[[i]]$StemID),"hom"])
       }
       HOM.BKT$MeanHOM <- NA
       for(i in 1:length(BKT.cens)){
-        HOM.BKT$MeanHOM[i] <- weighted.mean(x = BKT.cens[[i]][!duplicated(BKT.cens[[i]]$StemID),"hom"],
-                                            w = BKT.cens[[i]][!duplicated(BKT.cens[[i]]$StemID),"AGB"])
+        HOM.BKT$MeanHOM[i] <- mean(x = BKT.cens[[i]][!duplicated(BKT.cens[[i]]$StemID),"hom"])
       }
       HOM.HKK$MeanHOM <- NA
       for(i in 1:length(HKK.cens)){
-        HOM.HKK$MeanHOM[i] <- weighted.mean(x = HKK.cens[[i]][!duplicated(HKK.cens[[i]]$StemID),"hom"],
-                                            w = HKK.cens[[i]][!duplicated(HKK.cens[[i]]$StemID),"AGB"])
+        HOM.HKK$MeanHOM[i] <- mean(x = HKK.cens[[i]][!duplicated(HKK.cens[[i]]$StemID),"hom"])
       }
       HOM.KCH$MeanHOM <- NA
       for(i in 1:length(KCH.cens)){
-        HOM.KCH$MeanHOM[i] <- weighted.mean(x = KCH.cens[[i]][!duplicated(KCH.cens[[i]]$StemID),"hom"],
+        HOM.KCH$MeanHOM[i] <- mean(x = KCH.cens[[i]][!duplicated(KCH.cens[[i]]$StemID),"hom"])
+      }
+      
+      # Calculate the basal area-weighted mean HOM for each plot and year
+      HOM.AMA$MeanHOM.BA <- NA
+      for(i in 1:length(AMA.cens)){
+        AMA.cens[[i]]$BA <- pi*(AMA.cens[[i]]$dbh/2)^2
+        HOM.AMA$MeanHOM.BA[i] <- weighted.mean(x = AMA.cens[[i]][!duplicated(AMA.cens[[i]]$StemID),"hom"],
+                                            w = AMA.cens[[i]][!duplicated(AMA.cens[[i]]$StemID),"BA"])
+      }
+      HOM.BCI$MeanHOM.BA <- NA
+      for(i in 1:length(BCI.cens)){
+        BCI.cens[[i]]$BA <- pi*(BCI.cens[[i]]$dbh/2)^2
+        HOM.BCI$MeanHOM.BA[i] <- weighted.mean(x = BCI.cens[[i]][!duplicated(BCI.cens[[i]]$StemID),"hom"],
+                                            w = BCI.cens[[i]][!duplicated(BCI.cens[[i]]$StemID),"BA"])
+      }
+      HOM.BKT$MeanHOM.BA <- NA
+      for(i in 1:length(BKT.cens)){
+        BKT.cens[[i]]$BA <- pi*(BKT.cens[[i]]$dbh/2)^2
+        HOM.BKT$MeanHOM.BA[i] <- weighted.mean(x = BKT.cens[[i]][!duplicated(BKT.cens[[i]]$StemID),"hom"],
+                                            w = BKT.cens[[i]][!duplicated(BKT.cens[[i]]$StemID),"BA"])
+      }
+      HOM.HKK$MeanHOM.BA <- NA
+      for(i in 1:length(HKK.cens)){
+        HKK.cens[[i]]$BA <- pi*(HKK.cens[[i]]$dbh/2)^2
+        HOM.HKK$MeanHOM.BA[i] <- weighted.mean(x = HKK.cens[[i]][!duplicated(HKK.cens[[i]]$StemID),"hom"],
+                                            w = HKK.cens[[i]][!duplicated(HKK.cens[[i]]$StemID),"BA"])
+      }
+      HOM.KCH$MeanHOM.BA <- NA
+      for(i in 1:length(KCH.cens)){
+        KCH.cens[[i]]$BA <- pi*(KCH.cens[[i]]$dbh/2)^2
+        HOM.KCH$MeanHOM.BA[i] <- weighted.mean(x = KCH.cens[[i]][!duplicated(KCH.cens[[i]]$StemID),"hom"],
+                                            w = KCH.cens[[i]][!duplicated(KCH.cens[[i]]$StemID),"BA"])
+      }
+      
+    # Calculate the biomass-weighted mean HOM for each plot and year
+      HOM.AMA$MeanHOM.AGB <- NA
+      for(i in 1:length(AMA.cens)){
+        HOM.AMA$MeanHOM.AGB[i] <- weighted.mean(x = AMA.cens[[i]][!duplicated(AMA.cens[[i]]$StemID),"hom"],
+                                            w = AMA.cens[[i]][!duplicated(AMA.cens[[i]]$StemID),"AGB"])
+      }
+      HOM.BCI$MeanHOM.AGB <- NA
+      for(i in 1:length(BCI.cens)){
+        HOM.BCI$MeanHOM.AGB[i] <- weighted.mean(x = BCI.cens[[i]][!duplicated(BCI.cens[[i]]$StemID),"hom"],
+                                            w = BCI.cens[[i]][!duplicated(BCI.cens[[i]]$StemID),"AGB"])
+      }
+      HOM.BKT$MeanHOM.AGB <- NA
+      for(i in 1:length(BKT.cens)){
+        HOM.BKT$MeanHOM.AGB[i] <- weighted.mean(x = BKT.cens[[i]][!duplicated(BKT.cens[[i]]$StemID),"hom"],
+                                            w = BKT.cens[[i]][!duplicated(BKT.cens[[i]]$StemID),"AGB"])
+      }
+      HOM.HKK$MeanHOM.AGB <- NA
+      for(i in 1:length(HKK.cens)){
+        HOM.HKK$MeanHOM.AGB[i] <- weighted.mean(x = HKK.cens[[i]][!duplicated(HKK.cens[[i]]$StemID),"hom"],
+                                            w = HKK.cens[[i]][!duplicated(HKK.cens[[i]]$StemID),"AGB"])
+      }
+      HOM.KCH$MeanHOM.AGB <- NA
+      for(i in 1:length(KCH.cens)){
+        HOM.KCH$MeanHOM.AGB[i] <- weighted.mean(x = KCH.cens[[i]][!duplicated(KCH.cens[[i]]$StemID),"hom"],
                                             w = KCH.cens[[i]][!duplicated(KCH.cens[[i]]$StemID),"AGB"])
       }
       
