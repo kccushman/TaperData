@@ -303,12 +303,12 @@
 #### 2.1 Amacayacu ####
   # Species list
   AMA.sp <- droplevels(taper.sp.list[taper.sp.list$Site=='AMA',c('Mnemonic','Genus','Family')])
-    AMA.sp$Mnemonic <- capitalize(as.character(AMA.sp$Mnemonic))
+    AMA.sp$Mnemonic <- R.utils::capitalize(as.character(AMA.sp$Mnemonic))
   # Wood density file
   AMA.wd <- droplevels(wsg.ctfs2[wsg.ctfs2$site=="Amacayacu",])
     AMA.wd.sp <- aggregate.data.frame(AMA.wd$wsg,by=list(AMA.wd$sp),FUN='mean',na.rm=T)
      colnames(AMA.wd.sp) <- c('Mnemonic','WSG')
-     AMA.wd.sp$Mnemonic <- capitalize(as.character(AMA.wd.sp$Mnemonic))
+     AMA.wd.sp$Mnemonic <- R.utils::capitalize(as.character(AMA.wd.sp$Mnemonic))
     AMA.wd.genus <- aggregate.data.frame(AMA.wd$wsg,by=list(AMA.wd$genus),FUN='mean',na.rm=T)
       colnames(AMA.wd.genus) <- c('Genus','g.wsg')
     AMA.wd.family <- aggregate.data.frame(AMA.wd$wsg,by=list(AMA.wd$fam),FUN='mean',na.rm=T)
@@ -514,23 +514,28 @@
     # Calculate the biomass-weighted mean HOM for each plot and year
       HOM.AMA$MeanHOM <- NA
       for(i in 1:length(AMA.cens)){
-        HOM.AMA$MeanHOM[i] <- weighted.mean(x = AMA.cens[[i]]$hom, w = AMA.cens[[i]]$AGB)
+        HOM.AMA$MeanHOM[i] <- weighted.mean(x = AMA.cens[[i]][!duplicated(AMA.cens[[i]]$StemID),"hom"],
+                                            w = AMA.cens[[i]][!duplicated(AMA.cens[[i]]$StemID),"AGB"])
       }
       HOM.BCI$MeanHOM <- NA
       for(i in 1:length(BCI.cens)){
-        HOM.BCI$MeanHOM[i] <- weighted.mean(x = BCI.cens[[i]]$hom, w = BCI.cens[[i]]$AGB)
+        HOM.BCI$MeanHOM[i] <- weighted.mean(x = BCI.cens[[i]][!duplicated(BCI.cens[[i]]$StemID),"hom"],
+                                            w = BCI.cens[[i]][!duplicated(BCI.cens[[i]]$StemID),"AGB"])
       }
       HOM.BKT$MeanHOM <- NA
       for(i in 1:length(BKT.cens)){
-        HOM.BKT$MeanHOM[i] <- weighted.mean(x = BKT.cens[[i]]$hom, w = BKT.cens[[i]]$AGB)
+        HOM.BKT$MeanHOM[i] <- weighted.mean(x = BKT.cens[[i]][!duplicated(BKT.cens[[i]]$StemID),"hom"],
+                                            w = BKT.cens[[i]][!duplicated(BKT.cens[[i]]$StemID),"AGB"])
       }
       HOM.HKK$MeanHOM <- NA
       for(i in 1:length(HKK.cens)){
-        HOM.HKK$MeanHOM[i] <- weighted.mean(x = HKK.cens[[i]]$hom, w = HKK.cens[[i]]$AGB)
+        HOM.HKK$MeanHOM[i] <- weighted.mean(x = HKK.cens[[i]][!duplicated(HKK.cens[[i]]$StemID),"hom"],
+                                            w = HKK.cens[[i]][!duplicated(HKK.cens[[i]]$StemID),"AGB"])
       }
       HOM.KCH$MeanHOM <- NA
       for(i in 1:length(KCH.cens)){
-        HOM.KCH$MeanHOM[i] <- weighted.mean(x = KCH.cens[[i]]$hom, w = KCH.cens[[i]]$AGB)
+        HOM.KCH$MeanHOM[i] <- weighted.mean(x = KCH.cens[[i]][!duplicated(KCH.cens[[i]]$StemID),"hom"],
+                                            w = KCH.cens[[i]][!duplicated(KCH.cens[[i]]$StemID),"AGB"])
       }
       
     # Combine into a single data frame
@@ -734,4 +739,45 @@
 #### 7. Save formatted census data ####
 save(AMA.cens,BCI.cens,BKT.cens,HKK.cens,KCH.cens,file="ForestGEO_CensusData.RData")
 
+#### Revision edit: Look at first interval for BCI ####
+  # 1990-1995
+  HOMchange <- BCI.cens[[1]]
+  HOMchange <- HOMchange[!duplicated(HOMchange$StemID),]
+  HOMchange <- merge(x = HOMchange, y = BCI.cens[[2]][!duplicated(BCI.cens[[2]]$StemID),c("StemID","dbh","hom")],
+                     by = "StemID", all.x = T, all.y = T)
+  
+  HOMchange$dHOM <- HOMchange$hom.y-HOMchange$hom.x
+  hist(HOMchange[HOMchange$dHOM>0,"dHOM"], breaks=seq(-12,6,0.2), col="black",border="white",
+       main="1990 - 1995 HOM increases",xlab="HOM change (m)",
+       xlim=c(0,6),ylim=c(0,160))
+  weighted.mean(x = HOMchange$dHOM, w = HOMchange$AGB, na.rm=T)
 
+  #1995-2000
+  HOMchange <- BCI.cens[[2]]
+  HOMchange <- HOMchange[!duplicated(HOMchange$StemID),]
+  HOMchange <- merge(x = HOMchange, y = BCI.cens[[3]][!duplicated(BCI.cens[[3]]$StemID),c("StemID","dbh","hom")],
+                     by = "StemID", all.x = T, all.y = T)
+  
+  HOMchange$dHOM <- HOMchange$hom.y-HOMchange$hom.x
+  hist(HOMchange[HOMchange$dHOM>0,"dHOM"], breaks=seq(-12,6,0.2), col="black",border="white",
+       main="1995 - 2000 HOM increases",xlab="HOM change (m)",
+       xlim=c(0,6),ylim=c(0,160))
+  HOMchange[HOMchange$dHOM>3 & !is.na(HOMchange$dHOM),]
+  weighted.mean(x = HOMchange$dHOM, w = HOMchange$AGB, na.rm=T)
+  
+  #2000-2005
+  HOMchange <- BCI.cens[[3]]
+  HOMchange <- HOMchange[!duplicated(HOMchange$StemID),]
+  HOMchange <- merge(x = HOMchange, y = BCI.cens[[4]][!duplicated(BCI.cens[[4]]$StemID),c("StemID","dbh","hom")],
+                     by = "StemID", all.x = T, all.y = T)
+  
+  HOMchange$dHOM <- HOMchange$hom.y-HOMchange$hom.x
+  hist(HOMchange[HOMchange$dHOM>0,"dHOM"], breaks=seq(-12,6,0.2), col="black",border="white",
+       main="2000 - 2005 HOM increases",xlab="HOM change (m)",
+       xlim=c(0,6),ylim=c(0,160))
+  HOMchange[HOMchange$dHOM>3 & !is.na(HOMchange$dHOM),]
+  weighted.mean(x = HOMchange$dHOM, w = HOMchange$AGB, na.rm=T)
+  
+  weighted.mean(x = BCI.cens[[2]][!duplicated(BCI.cens[[2]]$StemID),"hom"],
+                w = BCI.cens[[2]][!duplicated(BCI.cens[[2]]$StemID),"AGB"])
+  

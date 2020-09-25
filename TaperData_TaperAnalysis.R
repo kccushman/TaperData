@@ -1,11 +1,11 @@
 ## NOTE: if working from the current Git repository, then workflow will function from step 2.
 TaperSample <- read.csv("DataFile_TaperParameterSample.csv")
 sites <- c("AMA","BCI","BKT","HKK","KCH")
-  sitesNames <- c("Amacayacu",
-                  "Barro Colorado",
-                  "Bukit Timah",
-                  "Huai Kha Khaeng",
-                  "Khao Chong")
+sitesNames <- c("Amacayacu",
+                "Barro Colorado",
+                "Bukit Timah",
+                "Huai Kha Khaeng",
+                "Khao Chong")
 
 # Load needed packages ### left for refernce; replaced with package::function notation throughout. 
   # library(splancs)
@@ -665,8 +665,9 @@ sites <- c("AMA","BCI","BKT","HKK","KCH")
     
         AGB_AMA <- data.frame(sample = 1:nboot,
                           AGB_FullModel = NA,
-                          AGB_SimpModel = NA,
-                          AGB_MedTaper = NA,
+                          AGB_Cross3Pr = NA,
+                          AGB_Cross2Pr = NA,
+                          AGB_CrossMed = NA,
                           b_med = NA)
         
         set.seed(1)
@@ -688,30 +689,48 @@ sites <- c("AMA","BCI","BKT","HKK","KCH")
                                          dbh = data.site$EDBH)
           AGB_AMA$AGB_FullModel[i] <- sum(data.site$AGB)
           
-          # Simple taper model
-          sample.simple <- sample(x = which(!(TaperSample$Site=="AMA")),
-                                size = dim(TaperSample[!(TaperSample$Site=="AMA"),])[1],
-                                replace = T)
-          data.simple <- TaperSample[sample.simple,]
-          model.simple <- lm(b1.iso~log(DBH) + log(HOM) + log(WSG), data = data.full)
-          data.site$b <- predict(model.simple, newdata = data.site)
+          # 3-parameter cross-validation
+          data.LOO <- data.full[!(data.full$Site=="AMA"),]
+          model.3pr <- lme4::lmer(b1.iso~log(DBH) + log(HOM) + log(WSG) + (1|Site), data = data.full)
+            model.3pr.int <- summary(model.3pr)$coefficients[1,1]
+            model.3pr.dbh <- summary(model.3pr)$coefficients[2,1]
+            model.3pr.hom <- summary(model.3pr)$coefficients[3,1]
+            model.3pr.wsg <- summary(model.3pr)$coefficients[4,1]
+          data.site$b <- model.3pr.int + model.3pr.dbh*log(data.site$DBH) + model.3pr.hom*log(data.site$HOM) + model.3pr.wsg*log(data.site$WSG)
+
           data.site$EDBH <- taper.eqn(d = data.site$DBH,
                                       h = data.site$HOM,
                                       b1 = data.site$b)
           data.site$AGB <- agb.allometry(E = data.site$E,
                                          wsg = data.site$WSG,
                                          dbh = data.site$EDBH)
-          AGB_AMA$AGB_SimpModel[i] <- sum(data.site$AGB)
+          AGB_AMA$AGB_Cross3Pr[i] <- sum(data.site$AGB)
+          
+          # 2-parameter cross-validation
+          data.LOO <- data.full[!(data.full$Site=="AMA"),]
+          model.2pr <- lme4::lmer(b1.iso~log(DBH) + log(HOM) + (1|Site), data = data.full)
+            model.2pr.int <- summary(model.2pr)$coefficients[1,1]
+            model.2pr.dbh <- summary(model.2pr)$coefficients[2,1]
+            model.2pr.hom <- summary(model.2pr)$coefficients[3,1]
+          data.site$b <- model.2pr.int + model.2pr.dbh*log(data.site$DBH) + model.2pr.hom*log(data.site$HOM)
+
+          data.site$EDBH <- taper.eqn(d = data.site$DBH,
+                                      h = data.site$HOM,
+                                      b1 = data.site$b)
+          data.site$AGB <- agb.allometry(E = data.site$E,
+                                         wsg = data.site$WSG,
+                                         dbh = data.site$EDBH)
+          AGB_AMA$AGB_Cross2Pr[i] <- sum(data.site$AGB)
           
           # "Median" taper value--tree where half of AGB is from smaller trees
-          data.full <- data.full[order(data.full$AGB_MeasTaper),]
-          data.full$CmAGB <- NA
-          for(j in 1:dim(data.full)[1]){
-            data.full$CmAGB[j] <- sum(data.full$AGB_MeasTaper[1:j])
+          data.LOO <- data.LOO[order(data.LOO$AGB_MeasTaper),]
+          data.LOO$CmAGB <- NA
+          for(j in 1:dim(data.LOO)[1]){
+            data.LOO$CmAGB[j] <- sum(data.LOO$AGB_MeasTaper[1:j])
           }
           
-          medDBH <- data.full[data.full$CmAGB > sum(data.full$AGB_MeasTaper)/2,"DBH"][1]
-          model.DAB <- lm(b1.iso~log(DBH), data = data.full)
+          medDBH <- data.LOO[data.LOO$CmAGB > sum(data.LOO$AGB_MeasTaper)/2,"DBH"][1]
+          model.DAB <- lm(b1.iso~log(DBH), data = data.LOO)
           b_med <- predict(model.DAB, newdata = data.frame(DBH = medDBH))
           data.site$EDBH <- taper.eqn(d = data.site$DBH,
                                       h = data.site$HOM,
@@ -719,7 +738,7 @@ sites <- c("AMA","BCI","BKT","HKK","KCH")
           data.site$AGB <- agb.allometry(E = data.site$E,
                                          wsg = data.site$WSG,
                                          dbh = data.site$EDBH)
-          AGB_AMA$AGB_MedTaper[i] <- sum(data.site$AGB)
+          AGB_AMA$AGB_CrossMed[i] <- sum(data.site$AGB)
           AGB_AMA$b_med[i] <- b_med
         }
 
@@ -727,8 +746,9 @@ sites <- c("AMA","BCI","BKT","HKK","KCH")
     
         AGB_BCI <- data.frame(sample = 1:nboot,
                           AGB_FullModel = NA,
-                          AGB_SimpModel = NA,
-                          AGB_MedTaper = NA,
+                          AGB_Cross3Pr = NA,
+                          AGB_Cross2Pr = NA,
+                          AGB_CrossMed = NA,
                           b_med = NA)
         
         set.seed(1)
@@ -750,30 +770,48 @@ sites <- c("AMA","BCI","BKT","HKK","KCH")
                                          dbh = data.site$EDBH)
           AGB_BCI$AGB_FullModel[i] <- sum(data.site$AGB)
           
-          # Simple taper model
-          sample.simple <- sample(x = which(!(TaperSample$Site=="BCI")),
-                                size = dim(TaperSample[!(TaperSample$Site=="BCI"),])[1],
-                                replace = T)
-          data.simple <- TaperSample[sample.simple,]
-          model.simple <- lm(b1.iso~log(DBH) + log(HOM) + log(WSG), data = data.full)
-          data.site$b <- predict(model.simple, newdata = data.site)
+          # 3-parameter cross-validation
+          data.LOO <- data.full[!(data.full$Site=="BCI"),]
+          model.3pr <- lme4::lmer(b1.iso~log(DBH) + log(HOM) + log(WSG) + (1|Site), data = data.full)
+            model.3pr.int <- summary(model.3pr)$coefficients[1,1]
+            model.3pr.dbh <- summary(model.3pr)$coefficients[2,1]
+            model.3pr.hom <- summary(model.3pr)$coefficients[3,1]
+            model.3pr.wsg <- summary(model.3pr)$coefficients[4,1]
+          data.site$b <- model.3pr.int + model.3pr.dbh*log(data.site$DBH) + model.3pr.hom*log(data.site$HOM) + model.3pr.wsg*log(data.site$WSG)
+
           data.site$EDBH <- taper.eqn(d = data.site$DBH,
                                       h = data.site$HOM,
                                       b1 = data.site$b)
           data.site$AGB <- agb.allometry(E = data.site$E,
                                          wsg = data.site$WSG,
                                          dbh = data.site$EDBH)
-          AGB_BCI$AGB_SimpModel[i] <- sum(data.site$AGB)
+          AGB_BCI$AGB_Cross3Pr[i] <- sum(data.site$AGB)
+          
+          # 2-parameter cross-validation
+          data.LOO <- data.full[!(data.full$Site=="BCI"),]
+          model.2pr <- lme4::lmer(b1.iso~log(DBH) + log(HOM) + (1|Site), data = data.full)
+            model.2pr.int <- summary(model.2pr)$coefficients[1,1]
+            model.2pr.dbh <- summary(model.2pr)$coefficients[2,1]
+            model.2pr.hom <- summary(model.2pr)$coefficients[3,1]
+          data.site$b <- model.2pr.int + model.2pr.dbh*log(data.site$DBH) + model.2pr.hom*log(data.site$HOM)
+
+          data.site$EDBH <- taper.eqn(d = data.site$DBH,
+                                      h = data.site$HOM,
+                                      b1 = data.site$b)
+          data.site$AGB <- agb.allometry(E = data.site$E,
+                                         wsg = data.site$WSG,
+                                         dbh = data.site$EDBH)
+          AGB_BCI$AGB_Cross2Pr[i] <- sum(data.site$AGB)
           
           # "Median" taper value--tree where half of AGB is from smaller trees
-          data.full <- data.full[order(data.full$AGB_MeasTaper),]
-          data.full$CmAGB <- NA
-          for(j in 1:dim(data.full)[1]){
-            data.full$CmAGB[j] <- sum(data.full$AGB_MeasTaper[1:j])
+          data.LOO <- data.LOO[order(data.LOO$AGB_MeasTaper),]
+          data.LOO$CmAGB <- NA
+          for(j in 1:dim(data.LOO)[1]){
+            data.LOO$CmAGB[j] <- sum(data.LOO$AGB_MeasTaper[1:j])
           }
           
-          medDBH <- data.full[data.full$CmAGB > sum(data.full$AGB_MeasTaper)/2,"DBH"][1]
-          model.DAB <- lm(b1.iso~log(DBH), data = data.full)
+          medDBH <- data.LOO[data.LOO$CmAGB > sum(data.LOO$AGB_MeasTaper)/2,"DBH"][1]
+          model.DAB <- lm(b1.iso~log(DBH), data = data.LOO)
           b_med <- predict(model.DAB, newdata = data.frame(DBH = medDBH))
           data.site$EDBH <- taper.eqn(d = data.site$DBH,
                                       h = data.site$HOM,
@@ -781,16 +819,17 @@ sites <- c("AMA","BCI","BKT","HKK","KCH")
           data.site$AGB <- agb.allometry(E = data.site$E,
                                          wsg = data.site$WSG,
                                          dbh = data.site$EDBH)
-          AGB_BCI$AGB_MedTaper[i] <- sum(data.site$AGB)
+          AGB_BCI$AGB_CrossMed[i] <- sum(data.site$AGB)
           AGB_BCI$b_med[i] <- b_med
-        } 
-        
+        }
+
     # Bukit Timah
     
         AGB_BKT <- data.frame(sample = 1:nboot,
                           AGB_FullModel = NA,
-                          AGB_SimpModel = NA,
-                          AGB_MedTaper = NA,
+                          AGB_Cross3Pr = NA,
+                          AGB_Cross2Pr = NA,
+                          AGB_CrossMed = NA,
                           b_med = NA)
         
         set.seed(1)
@@ -812,30 +851,48 @@ sites <- c("AMA","BCI","BKT","HKK","KCH")
                                          dbh = data.site$EDBH)
           AGB_BKT$AGB_FullModel[i] <- sum(data.site$AGB)
           
-          # Simple taper model
-          sample.simple <- sample(x = which(!(TaperSample$Site=="BKT")),
-                                size = dim(TaperSample[!(TaperSample$Site=="BKT"),])[1],
-                                replace = T)
-          data.simple <- TaperSample[sample.simple,]
-          model.simple <- lm(b1.iso~log(DBH) + log(HOM) + log(WSG), data = data.full)
-          data.site$b <- predict(model.simple, newdata = data.site)
+          # 3-parameter cross-validation
+          data.LOO <- data.full[!(data.full$Site=="BKT"),]
+          model.3pr <- lme4::lmer(b1.iso~log(DBH) + log(HOM) + log(WSG) + (1|Site), data = data.full)
+            model.3pr.int <- summary(model.3pr)$coefficients[1,1]
+            model.3pr.dbh <- summary(model.3pr)$coefficients[2,1]
+            model.3pr.hom <- summary(model.3pr)$coefficients[3,1]
+            model.3pr.wsg <- summary(model.3pr)$coefficients[4,1]
+          data.site$b <- model.3pr.int + model.3pr.dbh*log(data.site$DBH) + model.3pr.hom*log(data.site$HOM) + model.3pr.wsg*log(data.site$WSG)
+
           data.site$EDBH <- taper.eqn(d = data.site$DBH,
                                       h = data.site$HOM,
                                       b1 = data.site$b)
           data.site$AGB <- agb.allometry(E = data.site$E,
                                          wsg = data.site$WSG,
                                          dbh = data.site$EDBH)
-          AGB_BKT$AGB_SimpModel[i] <- sum(data.site$AGB)
+          AGB_BKT$AGB_Cross3Pr[i] <- sum(data.site$AGB)
+          
+          # 2-parameter cross-validation
+          data.LOO <- data.full[!(data.full$Site=="BKT"),]
+          model.2pr <- lme4::lmer(b1.iso~log(DBH) + log(HOM) + (1|Site), data = data.full)
+            model.2pr.int <- summary(model.2pr)$coefficients[1,1]
+            model.2pr.dbh <- summary(model.2pr)$coefficients[2,1]
+            model.2pr.hom <- summary(model.2pr)$coefficients[3,1]
+          data.site$b <- model.2pr.int + model.2pr.dbh*log(data.site$DBH) + model.2pr.hom*log(data.site$HOM)
+
+          data.site$EDBH <- taper.eqn(d = data.site$DBH,
+                                      h = data.site$HOM,
+                                      b1 = data.site$b)
+          data.site$AGB <- agb.allometry(E = data.site$E,
+                                         wsg = data.site$WSG,
+                                         dbh = data.site$EDBH)
+          AGB_BKT$AGB_Cross2Pr[i] <- sum(data.site$AGB)
           
           # "Median" taper value--tree where half of AGB is from smaller trees
-          data.full <- data.full[order(data.full$AGB_MeasTaper),]
-          data.full$CmAGB <- NA
-          for(j in 1:dim(data.full)[1]){
-            data.full$CmAGB[j] <- sum(data.full$AGB_MeasTaper[1:j])
+          data.LOO <- data.LOO[order(data.LOO$AGB_MeasTaper),]
+          data.LOO$CmAGB <- NA
+          for(j in 1:dim(data.LOO)[1]){
+            data.LOO$CmAGB[j] <- sum(data.LOO$AGB_MeasTaper[1:j])
           }
           
-          medDBH <- data.full[data.full$CmAGB > sum(data.full$AGB_MeasTaper)/2,"DBH"][1]
-          model.DAB <- lm(b1.iso~log(DBH), data = data.full)
+          medDBH <- data.LOO[data.LOO$CmAGB > sum(data.LOO$AGB_MeasTaper)/2,"DBH"][1]
+          model.DAB <- lm(b1.iso~log(DBH), data = data.LOO)
           b_med <- predict(model.DAB, newdata = data.frame(DBH = medDBH))
           data.site$EDBH <- taper.eqn(d = data.site$DBH,
                                       h = data.site$HOM,
@@ -843,16 +900,17 @@ sites <- c("AMA","BCI","BKT","HKK","KCH")
           data.site$AGB <- agb.allometry(E = data.site$E,
                                          wsg = data.site$WSG,
                                          dbh = data.site$EDBH)
-          AGB_BKT$AGB_MedTaper[i] <- sum(data.site$AGB)
+          AGB_BKT$AGB_CrossMed[i] <- sum(data.site$AGB)
           AGB_BKT$b_med[i] <- b_med
-        }     
+        }  
         
     # Huai Kha Khaeng
     
-         AGB_HKK <- data.frame(sample = 1:nboot,
+        AGB_HKK <- data.frame(sample = 1:nboot,
                           AGB_FullModel = NA,
-                          AGB_SimpModel = NA,
-                          AGB_MedTaper = NA,
+                          AGB_Cross3Pr = NA,
+                          AGB_Cross2Pr = NA,
+                          AGB_CrossMed = NA,
                           b_med = NA)
         
         set.seed(1)
@@ -874,30 +932,48 @@ sites <- c("AMA","BCI","BKT","HKK","KCH")
                                          dbh = data.site$EDBH)
           AGB_HKK$AGB_FullModel[i] <- sum(data.site$AGB)
           
-          # Simple taper model
-          sample.simple <- sample(x = which(!(TaperSample$Site=="HKK")),
-                                size = dim(TaperSample[!(TaperSample$Site=="HKK"),])[1],
-                                replace = T)
-          data.simple <- TaperSample[sample.simple,]
-          model.simple <- lm(b1.iso~log(DBH) + log(HOM) + log(WSG), data = data.full)
-          data.site$b <- predict(model.simple, newdata = data.site)
+          # 3-parameter cross-validation
+          data.LOO <- data.full[!(data.full$Site=="HKK"),]
+          model.3pr <- lme4::lmer(b1.iso~log(DBH) + log(HOM) + log(WSG) + (1|Site), data = data.full)
+            model.3pr.int <- summary(model.3pr)$coefficients[1,1]
+            model.3pr.dbh <- summary(model.3pr)$coefficients[2,1]
+            model.3pr.hom <- summary(model.3pr)$coefficients[3,1]
+            model.3pr.wsg <- summary(model.3pr)$coefficients[4,1]
+          data.site$b <- model.3pr.int + model.3pr.dbh*log(data.site$DBH) + model.3pr.hom*log(data.site$HOM) + model.3pr.wsg*log(data.site$WSG)
+
           data.site$EDBH <- taper.eqn(d = data.site$DBH,
                                       h = data.site$HOM,
                                       b1 = data.site$b)
           data.site$AGB <- agb.allometry(E = data.site$E,
                                          wsg = data.site$WSG,
                                          dbh = data.site$EDBH)
-          AGB_HKK$AGB_SimpModel[i] <- sum(data.site$AGB)
+          AGB_HKK$AGB_Cross3Pr[i] <- sum(data.site$AGB)
+          
+          # 2-parameter cross-validation
+          data.LOO <- data.full[!(data.full$Site=="HKK"),]
+          model.2pr <- lme4::lmer(b1.iso~log(DBH) + log(HOM) + (1|Site), data = data.full)
+            model.2pr.int <- summary(model.2pr)$coefficients[1,1]
+            model.2pr.dbh <- summary(model.2pr)$coefficients[2,1]
+            model.2pr.hom <- summary(model.2pr)$coefficients[3,1]
+          data.site$b <- model.2pr.int + model.2pr.dbh*log(data.site$DBH) + model.2pr.hom*log(data.site$HOM)
+
+          data.site$EDBH <- taper.eqn(d = data.site$DBH,
+                                      h = data.site$HOM,
+                                      b1 = data.site$b)
+          data.site$AGB <- agb.allometry(E = data.site$E,
+                                         wsg = data.site$WSG,
+                                         dbh = data.site$EDBH)
+          AGB_HKK$AGB_Cross2Pr[i] <- sum(data.site$AGB)
           
           # "Median" taper value--tree where half of AGB is from smaller trees
-          data.full <- data.full[order(data.full$AGB_MeasTaper),]
-          data.full$CmAGB <- NA
-          for(j in 1:dim(data.full)[1]){
-            data.full$CmAGB[j] <- sum(data.full$AGB_MeasTaper[1:j])
+          data.LOO <- data.LOO[order(data.LOO$AGB_MeasTaper),]
+          data.LOO$CmAGB <- NA
+          for(j in 1:dim(data.LOO)[1]){
+            data.LOO$CmAGB[j] <- sum(data.LOO$AGB_MeasTaper[1:j])
           }
           
-          medDBH <- data.full[data.full$CmAGB > sum(data.full$AGB_MeasTaper)/2,"DBH"][1]
-          model.DAB <- lm(b1.iso~log(DBH), data = data.full)
+          medDBH <- data.LOO[data.LOO$CmAGB > sum(data.LOO$AGB_MeasTaper)/2,"DBH"][1]
+          model.DAB <- lm(b1.iso~log(DBH), data = data.LOO)
           b_med <- predict(model.DAB, newdata = data.frame(DBH = medDBH))
           data.site$EDBH <- taper.eqn(d = data.site$DBH,
                                       h = data.site$HOM,
@@ -905,16 +981,17 @@ sites <- c("AMA","BCI","BKT","HKK","KCH")
           data.site$AGB <- agb.allometry(E = data.site$E,
                                          wsg = data.site$WSG,
                                          dbh = data.site$EDBH)
-          AGB_HKK$AGB_MedTaper[i] <- sum(data.site$AGB)
+          AGB_HKK$AGB_CrossMed[i] <- sum(data.site$AGB)
           AGB_HKK$b_med[i] <- b_med
-        }    
+        }  
         
     # Khao Chong
     
         AGB_KCH <- data.frame(sample = 1:nboot,
                           AGB_FullModel = NA,
-                          AGB_SimpModel = NA,
-                          AGB_MedTaper = NA,
+                          AGB_Cross3Pr = NA,
+                          AGB_Cross2Pr = NA,
+                          AGB_CrossMed = NA,
                           b_med = NA)
         
         set.seed(1)
@@ -936,30 +1013,48 @@ sites <- c("AMA","BCI","BKT","HKK","KCH")
                                          dbh = data.site$EDBH)
           AGB_KCH$AGB_FullModel[i] <- sum(data.site$AGB)
           
-          # Simple taper model
-          sample.simple <- sample(x = which(!(TaperSample$Site=="KCH")),
-                                size = dim(TaperSample[!(TaperSample$Site=="KCH"),])[1],
-                                replace = T)
-          data.simple <- TaperSample[sample.simple,]
-          model.simple <- lm(b1.iso~log(DBH) + log(HOM) + log(WSG), data = data.full)
-          data.site$b <- predict(model.simple, newdata = data.site)
+          # 3-parameter cross-validation
+          data.LOO <- data.full[!(data.full$Site=="KCH"),]
+          model.3pr <- lme4::lmer(b1.iso~log(DBH) + log(HOM) + log(WSG) + (1|Site), data = data.full)
+            model.3pr.int <- summary(model.3pr)$coefficients[1,1]
+            model.3pr.dbh <- summary(model.3pr)$coefficients[2,1]
+            model.3pr.hom <- summary(model.3pr)$coefficients[3,1]
+            model.3pr.wsg <- summary(model.3pr)$coefficients[4,1]
+          data.site$b <- model.3pr.int + model.3pr.dbh*log(data.site$DBH) + model.3pr.hom*log(data.site$HOM) + model.3pr.wsg*log(data.site$WSG)
+
           data.site$EDBH <- taper.eqn(d = data.site$DBH,
                                       h = data.site$HOM,
                                       b1 = data.site$b)
           data.site$AGB <- agb.allometry(E = data.site$E,
                                          wsg = data.site$WSG,
                                          dbh = data.site$EDBH)
-          AGB_KCH$AGB_SimpModel[i] <- sum(data.site$AGB)
+          AGB_KCH$AGB_Cross3Pr[i] <- sum(data.site$AGB)
+          
+          # 2-parameter cross-validation
+          data.LOO <- data.full[!(data.full$Site=="KCH"),]
+          model.2pr <- lme4::lmer(b1.iso~log(DBH) + log(HOM) + (1|Site), data = data.full)
+            model.2pr.int <- summary(model.2pr)$coefficients[1,1]
+            model.2pr.dbh <- summary(model.2pr)$coefficients[2,1]
+            model.2pr.hom <- summary(model.2pr)$coefficients[3,1]
+          data.site$b <- model.2pr.int + model.2pr.dbh*log(data.site$DBH) + model.2pr.hom*log(data.site$HOM)
+
+          data.site$EDBH <- taper.eqn(d = data.site$DBH,
+                                      h = data.site$HOM,
+                                      b1 = data.site$b)
+          data.site$AGB <- agb.allometry(E = data.site$E,
+                                         wsg = data.site$WSG,
+                                         dbh = data.site$EDBH)
+          AGB_KCH$AGB_Cross2Pr[i] <- sum(data.site$AGB)
           
           # "Median" taper value--tree where half of AGB is from smaller trees
-          data.full <- data.full[order(data.full$AGB_MeasTaper),]
-          data.full$CmAGB <- NA
-          for(j in 1:dim(data.full)[1]){
-            data.full$CmAGB[j] <- sum(data.full$AGB_MeasTaper[1:j])
+          data.LOO <- data.LOO[order(data.LOO$AGB_MeasTaper),]
+          data.LOO$CmAGB <- NA
+          for(j in 1:dim(data.LOO)[1]){
+            data.LOO$CmAGB[j] <- sum(data.LOO$AGB_MeasTaper[1:j])
           }
           
-          medDBH <- data.full[data.full$CmAGB > sum(data.full$AGB_MeasTaper)/2,"DBH"][1]
-          model.DAB <- lm(b1.iso~log(DBH), data = data.full)
+          medDBH <- data.LOO[data.LOO$CmAGB > sum(data.LOO$AGB_MeasTaper)/2,"DBH"][1]
+          model.DAB <- lm(b1.iso~log(DBH), data = data.LOO)
           b_med <- predict(model.DAB, newdata = data.frame(DBH = medDBH))
           data.site$EDBH <- taper.eqn(d = data.site$DBH,
                                       h = data.site$HOM,
@@ -967,9 +1062,9 @@ sites <- c("AMA","BCI","BKT","HKK","KCH")
           data.site$AGB <- agb.allometry(E = data.site$E,
                                          wsg = data.site$WSG,
                                          dbh = data.site$EDBH)
-          AGB_KCH$AGB_MedTaper[i] <- sum(data.site$AGB)
+          AGB_KCH$AGB_CrossMed[i] <- sum(data.site$AGB)
           AGB_KCH$b_med[i] <- b_med
-        }    
+        }  
         
   # Summarize results
     AGB_list <- list(AGB_AMA, AGB_BCI, AGB_BKT, AGB_HKK, AGB_KCH)    
@@ -977,97 +1072,119 @@ sites <- c("AMA","BCI","BKT","HKK","KCH")
     AGB_Results <- data.frame(site=sites,
                               AGB_Uncorrected=NA,
                               AGB_MeasTaper=NA,
-                              AGB_ModelTaperFull_Mean=NA,
-                              AGB_ModelTaperFull_Min95=NA,
-                              AGB_ModelTaperFull_Max95=NA,
-                              AGB_ModelTaperSimp_Mean=NA,
-                              AGB_ModelTaperSimp_Min95=NA,
-                              AGB_ModelTaperSimp_Max95=NA,
-                              AGB_MedTaper_Mean=NA,
-                              AGB_MedTaper_Min95=NA,
-                              AGB_MedTaper_Max95=NA,
-                              AGB_MeasTaperStd=NA,
-                              AGB_ModelTaperFull_MeanStd=NA,
-                              AGB_ModelTaperFull_Min95Std=NA,
-                              AGB_ModelTaperFull_Max95Std=NA,
-                              AGB_ModelTaperSimp_MeanStd=NA,
-                              AGB_ModelTaperSimp_Min95Std=NA,
-                              AGB_ModelTaperSimp_Max95Std=NA,
-                              AGB_MedTaper_MeanStd=NA,
-                              AGB_MedTaper_Min95Std=NA,
-                              AGB_MedTaper_Max95Std=NA)
+                              AGB_FullModel_Mean=NA,
+                              AGB_FullModel_Min95=NA,
+                              AGB_FullModel_Max95=NA,
+                              AGB_Cross3Pr_Mean=NA,
+                              AGB_Cross3Pr_Min95=NA,
+                              AGB_Cross3Pr_Max95=NA,
+                              AGB_Cross2Pr_Mean=NA,
+                              AGB_Cross2Pr_Min95=NA,
+                              AGB_Cross2Pr_Max95=NA,
+                              AGB_CrossMed_Mean=NA,
+                              AGB_CrossMed_Min95=NA,
+                              AGB_CrossMed_Max95=NA,
+                              AGB_MeasTaper_Std=NA,
+                              AGB_FullModel_Mean_Std=NA,
+                              AGB_FullModel_Min95_Std=NA,
+                              AGB_FullModel_Max95_Std=NA,
+                              AGB_Cross3Pr_Mean_Std=NA,
+                              AGB_Cross3Pr_Min95_Std=NA,
+                              AGB_Cross3Pr_Max95_Std=NA,
+                              AGB_Cross2Pr_Mean_Std=NA,
+                              AGB_Cross2Pr_Min95_Std=NA,
+                              AGB_Cross2Pr_Max95_Std=NA,
+                              AGB_CrossMed_Mean_Std=NA,
+                              AGB_CrossMed_Min95_Std=NA,
+                              AGB_CrossMed_Max95_Std=NA)
     
     for(i in 1:length(sites)){
       AGB_Results$AGB_Uncorrected[i] <- sum(TaperSample[TaperSample$Site==sites[i],"AGB_Uncorected"])
       AGB_Results$AGB_MeasTaper[i] <- sum(TaperSample[TaperSample$Site==sites[i],"AGB_MeasTaper"])
-      AGB_Results$AGB_ModelTaperFull_Mean[i] <- mean(AGB_list[[i]]$AGB_FullModel)
-      AGB_Results$AGB_ModelTaperFull_Min95[i] <- quantile((AGB_list[[i]]$AGB_FullModel), 0.025)
-      AGB_Results$AGB_ModelTaperFull_Max95[i] <- quantile((AGB_list[[i]]$AGB_FullModel), 0.975)
-      AGB_Results$AGB_ModelTaperSimp_Mean[i] <- mean(AGB_list[[i]]$AGB_SimpModel)
-      AGB_Results$AGB_ModelTaperSimp_Min95[i] <- quantile((AGB_list[[i]]$AGB_SimpModel), 0.025)
-      AGB_Results$AGB_ModelTaperSimp_Max95[i] <- quantile((AGB_list[[i]]$AGB_SimpModel), 0.975)
-      AGB_Results$AGB_MedTaper_Mean[i] <- mean(AGB_list[[i]]$AGB_MedTaper)
-      AGB_Results$AGB_MedTaper_Min95[i] <- quantile((AGB_list[[i]]$AGB_MedTaper), 0.025)
-      AGB_Results$AGB_MedTaper_Max95[i] <- quantile((AGB_list[[i]]$AGB_MedTaper), 0.975)
+      AGB_Results$AGB_FullModel_Mean[i] <- mean(AGB_list[[i]]$AGB_FullModel)
+      AGB_Results$AGB_FullModel_Min95[i] <- quantile((AGB_list[[i]]$AGB_FullModel), 0.025)
+      AGB_Results$AGB_FullModel_Max95[i] <- quantile((AGB_list[[i]]$AGB_FullModel), 0.975)
+      AGB_Results$AGB_Cross3Pr_Mean[i] <- mean(AGB_list[[i]]$AGB_Cross3Pr)
+      AGB_Results$AGB_Cross3Pr_Min95[i] <- quantile((AGB_list[[i]]$AGB_Cross3Pr), 0.025)
+      AGB_Results$AGB_Cross3Pr_Max95[i] <- quantile((AGB_list[[i]]$AGB_Cross3Pr), 0.975)
+      AGB_Results$AGB_Cross2Pr_Mean[i] <- mean(AGB_list[[i]]$AGB_Cross2Pr)
+      AGB_Results$AGB_Cross2Pr_Min95[i] <- quantile((AGB_list[[i]]$AGB_Cross2Pr), 0.025)
+      AGB_Results$AGB_Cross2Pr_Max95[i] <- quantile((AGB_list[[i]]$AGB_Cross2Pr), 0.975)
+      AGB_Results$AGB_CrossMed_Mean[i] <- mean(AGB_list[[i]]$AGB_CrossMed)
+      AGB_Results$AGB_CrossMed_Min95[i] <- quantile((AGB_list[[i]]$AGB_CrossMed), 0.025)
+      AGB_Results$AGB_CrossMed_Max95[i] <- quantile((AGB_list[[i]]$AGB_CrossMed), 0.975)
     }
     
     # Calculate standardized values -- compared to uncorrected data
-      AGB_Results$AGB_MeasTaperStd <- AGB_Results$AGB_MeasTaper/AGB_Results$AGB_Uncorrected
-      AGB_Results$AGB_ModelTaperFull_MeanStd <- AGB_Results$AGB_ModelTaperFull_Mean/AGB_Results$AGB_Uncorrected
-      AGB_Results$AGB_ModelTaperFull_Min95Std <- AGB_Results$AGB_ModelTaperFull_Min95/AGB_Results$AGB_Uncorrected
-      AGB_Results$AGB_ModelTaperFull_Max95Std <- AGB_Results$AGB_ModelTaperFull_Max95/AGB_Results$AGB_Uncorrected
-      AGB_Results$AGB_ModelTaperSimp_MeanStd <- AGB_Results$AGB_ModelTaperSimp_Mean/AGB_Results$AGB_Uncorrected
-      AGB_Results$AGB_ModelTaperSimp_Min95Std <- AGB_Results$AGB_ModelTaperSimp_Min95/AGB_Results$AGB_Uncorrected
-      AGB_Results$AGB_ModelTaperSimp_Max95Std <- AGB_Results$AGB_ModelTaperSimp_Max95/AGB_Results$AGB_Uncorrected
-      AGB_Results$AGB_MedTaper_MeanStd <- AGB_Results$AGB_MedTaper_Mean/AGB_Results$AGB_Uncorrected
-      AGB_Results$AGB_MedTaper_Min95Std <- AGB_Results$AGB_MedTaper_Min95/AGB_Results$AGB_Uncorrected
-      AGB_Results$AGB_MedTaper_Max95Std <- AGB_Results$AGB_MedTaper_Max95/AGB_Results$AGB_Uncorrected
+      AGB_Results$AGB_MeasTaper_Std <- AGB_Results$AGB_MeasTaper/AGB_Results$AGB_Uncorrected
+      AGB_Results$AGB_FullModel_Mean_Std <- AGB_Results$AGB_FullModel_Mean/AGB_Results$AGB_Uncorrected
+      AGB_Results$AGB_FullModel_Min95_Std <- AGB_Results$AGB_FullModel_Min95/AGB_Results$AGB_Uncorrected
+      AGB_Results$AGB_FullModel_Max95_Std <- AGB_Results$AGB_FullModel_Max95/AGB_Results$AGB_Uncorrected
+      AGB_Results$AGB_Cross3Pr_Mean_Std <- AGB_Results$AGB_Cross3Pr_Mean/AGB_Results$AGB_Uncorrected
+      AGB_Results$AGB_Cross3Pr_Min95_Std <- AGB_Results$AGB_Cross3Pr_Min95/AGB_Results$AGB_Uncorrected
+      AGB_Results$AGB_Cross3Pr_Max95_Std <- AGB_Results$AGB_Cross3Pr_Max95/AGB_Results$AGB_Uncorrected
+      AGB_Results$AGB_Cross2Pr_Mean_Std <- AGB_Results$AGB_Cross2Pr_Mean/AGB_Results$AGB_Uncorrected
+      AGB_Results$AGB_Cross2Pr_Min95_Std <- AGB_Results$AGB_Cross2Pr_Min95/AGB_Results$AGB_Uncorrected
+      AGB_Results$AGB_Cross2Pr_Max95_Std <- AGB_Results$AGB_Cross2Pr_Max95/AGB_Results$AGB_Uncorrected
+      AGB_Results$AGB_CrossMed_Mean_Std <- AGB_Results$AGB_CrossMed_Mean/AGB_Results$AGB_Uncorrected
+      AGB_Results$AGB_CrossMed_Min95_Std <- AGB_Results$AGB_CrossMed_Min95/AGB_Results$AGB_Uncorrected
+      AGB_Results$AGB_CrossMed_Max95_Std <- AGB_Results$AGB_CrossMed_Max95/AGB_Results$AGB_Uncorrected
 
       
+      par(las=1)
       plot(x=1:5,
-           y=AGB_Results$AGB_MeasTaperStd,
+           y=AGB_Results$AGB_MeasTaper_Std,
            ylab="AGB relative to uncorrected",
            xlim=c(0.9,5.5),
            ylim=c(1,1.3),
            pch=19,
-           col="#2b8cbe",
+           col="#253494",
            xaxt="na",
            xlab = NA)
       # Add full taper model
       arrows(x0=1:5+0.1, x1=1:5+0.1,
-             y0=AGB_Results$AGB_ModelTaperFull_Min95Std, y1=AGB_Results$AGB_ModelTaperFull_Max95Std,
+             y0=AGB_Results$AGB_FullModel_Min95_Std, y1=AGB_Results$AGB_FullModel_Max95_Std,
              length=0,
              angle=90,
-             col="#7bccc4",
+             col="#2c7fb8",
              lwd=2)
-      points(x=1:5+0.1, y=AGB_Results$AGB_ModelTaperFull_MeanStd, pch=19, col="#7bccc4")
-      # Add simple taper model
+      points(x=1:5+0.1, y=AGB_Results$AGB_FullModel_Mean_Std, pch=19, col="#2c7fb8")
+      # 3 parameter cross-validation
       arrows(x0=1:5+0.2, x1=1:5+0.2,
-             y0=AGB_Results$AGB_ModelTaperSimp_Min95Std, y1=AGB_Results$AGB_ModelTaperSimp_Max95Std,
+             y0=AGB_Results$AGB_Cross3Pr_Min95_Std, y1=AGB_Results$AGB_Cross3Pr_Max95_Std,
              length=0,
              angle=90,
-             col="#bae4bc",
+             col="#41b6c4",
              lwd=2)
-      points(x=1:5+0.2, y=AGB_Results$AGB_ModelTaperSimp_MeanStd, pch=19, col="#bae4bc")
-      # Add "median" taper value
+      points(x=1:5+0.2, y=AGB_Results$AGB_Cross3Pr_Mean_Std, pch=19, col="#41b6c4")
+      # 2 parameter cross-validation
       arrows(x0=1:5+0.3, x1=1:5+0.3,
-             y0=AGB_Results$AGB_MedTaper_Min95Std, y1=AGB_Results$AGB_MedTaper_Max95Std,
+             y0=AGB_Results$AGB_Cross2Pr_Min95_Std, y1=AGB_Results$AGB_Cross2Pr_Max95_Std,
+             length=0,
+             angle=90,
+             col="#a1dab4",
+             lwd=2)
+      points(x=1:5+0.3, y=AGB_Results$AGB_Cross2Pr_Mean_Std, pch=19, col="#a1dab4")
+      # Add "median" taper value
+      arrows(x0=1:5+0.4, x1=1:5+0.4,
+             y0=AGB_Results$AGB_CrossMed_Min95_Std, y1=AGB_Results$AGB_CrossMed_Max95_Std,
              length=0,
              angle=90,
              col="grey",
              lwd=2)
-      points(x=1:5+0.3, y=AGB_Results$AGB_MedTaper_MeanStd, pch=19, col="grey")
+      points(x=1:5+0.4, y=AGB_Results$AGB_CrossMed_Mean_Std, pch=19, col="grey")
       
       abline(h=1,lty=2)
       
-    legend(x=3,y=1.33,
+    legend(x=2.7,y=1.32,
            c("Measured taper",
              "Full model",
-             "Simple model",
-             "'Median' taper"),
+             "Cross validation, 3 parameters",
+             "Cross validation, 2 parameters",
+             "Cross validation, single value"),
            y.intersp = 0.7,
            pch=19,
-           col=c("#2b8cbe","#7bccc4","#bae4bc","grey"),
+           col=c("#253494","#2c7fb8","#41b6c4","#a1dab4","grey"),
            bty="n")
     
     text(x=1.2,y=1.01,sitesNames[1], cex=0.7)
