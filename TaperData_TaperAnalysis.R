@@ -650,6 +650,11 @@ sitesNames <- c("Amacayacu",
                                                  wsg = TaperSample$WSG,
                                                  dbh = TaperSample$DBH)
       
+    # AGB without site and wood density differences to better sort by size
+      TaperSample$AGB_Sort <- agb.allometry(E = mean(TaperSample$E),
+                                            wsg = mean(TaperSample$WSG),
+                                            dbh = TaperSample$DBH)  
+      
     # AGB with measured taper
       TaperSample$EDBH_MeasTaper <- taper.eqn(d = TaperSample$DBH,
                                               h = TaperSample$HOM,
@@ -723,10 +728,10 @@ sitesNames <- c("Amacayacu",
           AGB_AMA$AGB_Cross2Pr[i] <- sum(data.site$AGB)
           
           # "Median" taper value--tree where half of AGB is from smaller trees
-          data.LOO <- data.LOO[order(data.LOO$AGB_MeasTaper),]
+          data.LOO <- data.LOO[order(data.LOO$AGB_Sort),]
           data.LOO$CmAGB <- NA
           for(j in 1:dim(data.LOO)[1]){
-            data.LOO$CmAGB[j] <- sum(data.LOO$AGB_MeasTaper[1:j])
+            data.LOO$CmAGB[j] <- sum(data.LOO$AGB_Sort[1:j])
           }
           
           medDBH <- data.LOO[data.LOO$CmAGB > sum(data.LOO$AGB_MeasTaper)/2,"DBH"][1]
@@ -804,10 +809,10 @@ sitesNames <- c("Amacayacu",
           AGB_BCI$AGB_Cross2Pr[i] <- sum(data.site$AGB)
           
           # "Median" taper value--tree where half of AGB is from smaller trees
-          data.LOO <- data.LOO[order(data.LOO$AGB_MeasTaper),]
+          data.LOO <- data.LOO[order(data.LOO$AGB_Sort),]
           data.LOO$CmAGB <- NA
           for(j in 1:dim(data.LOO)[1]){
-            data.LOO$CmAGB[j] <- sum(data.LOO$AGB_MeasTaper[1:j])
+            data.LOO$CmAGB[j] <- sum(data.LOO$AGB_Sort[1:j])
           }
           
           medDBH <- data.LOO[data.LOO$CmAGB > sum(data.LOO$AGB_MeasTaper)/2,"DBH"][1]
@@ -885,10 +890,10 @@ sitesNames <- c("Amacayacu",
           AGB_BKT$AGB_Cross2Pr[i] <- sum(data.site$AGB)
           
           # "Median" taper value--tree where half of AGB is from smaller trees
-          data.LOO <- data.LOO[order(data.LOO$AGB_MeasTaper),]
+          data.LOO <- data.LOO[order(data.LOO$AGB_Sort),]
           data.LOO$CmAGB <- NA
           for(j in 1:dim(data.LOO)[1]){
-            data.LOO$CmAGB[j] <- sum(data.LOO$AGB_MeasTaper[1:j])
+            data.LOO$CmAGB[j] <- sum(data.LOO$AGB_Sort[1:j])
           }
           
           medDBH <- data.LOO[data.LOO$CmAGB > sum(data.LOO$AGB_MeasTaper)/2,"DBH"][1]
@@ -966,10 +971,10 @@ sitesNames <- c("Amacayacu",
           AGB_HKK$AGB_Cross2Pr[i] <- sum(data.site$AGB)
           
           # "Median" taper value--tree where half of AGB is from smaller trees
-          data.LOO <- data.LOO[order(data.LOO$AGB_MeasTaper),]
+          data.LOO <- data.LOO[order(data.LOO$AGB_Sort),]
           data.LOO$CmAGB <- NA
           for(j in 1:dim(data.LOO)[1]){
-            data.LOO$CmAGB[j] <- sum(data.LOO$AGB_MeasTaper[1:j])
+            data.LOO$CmAGB[j] <- sum(data.LOO$AGB_Sort[1:j])
           }
           
           medDBH <- data.LOO[data.LOO$CmAGB > sum(data.LOO$AGB_MeasTaper)/2,"DBH"][1]
@@ -1047,10 +1052,10 @@ sitesNames <- c("Amacayacu",
           AGB_KCH$AGB_Cross2Pr[i] <- sum(data.site$AGB)
           
           # "Median" taper value--tree where half of AGB is from smaller trees
-          data.LOO <- data.LOO[order(data.LOO$AGB_MeasTaper),]
+          data.LOO <- data.LOO[order(data.LOO$AGB_Sort),]
           data.LOO$CmAGB <- NA
           for(j in 1:dim(data.LOO)[1]){
-            data.LOO$CmAGB[j] <- sum(data.LOO$AGB_MeasTaper[1:j])
+            data.LOO$CmAGB[j] <- sum(data.LOO$AGB_Sort[1:j])
           }
           
           medDBH <- data.LOO[data.LOO$CmAGB > sum(data.LOO$AGB_MeasTaper)/2,"DBH"][1]
