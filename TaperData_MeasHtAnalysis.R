@@ -609,29 +609,39 @@
         HOM.results[HOM.results$Site=="KCH","Year"] <- c(2000,2005,2010)
 
       # Write a .csv file with these results to make a figure
-        write.csv(HOM.results, file = "Data file_HOMresultsPerPlot.csv", row.names = F)
+        write.csv(HOM.results, file = "DataFile_HOMresultsPerPlot.csv", row.names = F)
 
 #### 4. Repeat HOM analysis but only using stems greater than 30 cm DBH (comparable across plots) ####
   # Make new lists of data greater than 30 cm
       AMA.cens30 <- AMA.cens
       for(i in 1:length(AMA.cens)){
         AMA.cens30[[i]] <- AMA.cens[[i]][AMA.cens[[i]]$dbh >= 30,]
+        AMA.cens30[[i]] <- AMA.cens30[[i]][order(AMA.cens30[[i]]$StemID,-AMA.cens30[[i]]$hom),]
+        AMA.cens30[[i]] <- AMA.cens30[[i]][!duplicated(AMA.cens30[[i]]$StemID),]
       }
       BCI.cens30 <- BCI.cens
       for(i in 1:length(BCI.cens)){
         BCI.cens30[[i]] <- BCI.cens[[i]][BCI.cens[[i]]$dbh >= 30,]
-      }
+        BCI.cens30[[i]] <- BCI.cens30[[i]][order(BCI.cens30[[i]]$StemID,-BCI.cens30[[i]]$hom),]
+        BCI.cens30[[i]] <- BCI.cens30[[i]][!duplicated(BCI.cens30[[i]]$StemID),]
+        }
       BKT.cens30 <- BKT.cens
       for(i in 1:length(BKT.cens)){
         BKT.cens30[[i]] <- BKT.cens[[i]][BKT.cens[[i]]$dbh >= 30,]
+        BKT.cens30[[i]] <- BKT.cens30[[i]][order(BKT.cens30[[i]]$StemID,-BKT.cens30[[i]]$hom),]
+        BKT.cens30[[i]] <- BKT.cens30[[i]][!duplicated(BKT.cens30[[i]]$StemID),]
       }
       HKK.cens30 <- HKK.cens
       for(i in 1:length(HKK.cens)){
         HKK.cens30[[i]] <- HKK.cens[[i]][HKK.cens[[i]]$dbh >= 30,]
+        HKK.cens30[[i]] <- HKK.cens30[[i]][order(HKK.cens30[[i]]$StemID,-HKK.cens30[[i]]$hom),]
+        HKK.cens30[[i]] <- HKK.cens30[[i]][!duplicated(HKK.cens30[[i]]$StemID),]
       }
       KCH.cens30 <- KCH.cens
       for(i in 1:length(KCH.cens)){
         KCH.cens30[[i]] <- KCH.cens[[i]][KCH.cens[[i]]$dbh >= 30,]
+        KCH.cens30[[i]] <- KCH.cens30[[i]][order(KCH.cens30[[i]]$StemID,-KCH.cens30[[i]]$hom),]
+        KCH.cens30[[i]] <- KCH.cens30[[i]][!duplicated(KCH.cens30[[i]]$StemID),]
       }
        
     # Use function to calculate proportion of stems and basal area measured at non-standard heights for each plot
@@ -680,7 +690,7 @@
         HOM30.results[HOM30.results$Site=="KCH","Year"] <- c(2000,2005,2010)
         
       # Write a .csv file with these results to make a figure
-        write.csv(HOM30.results, file = "Data file_HOMresultsPerPlot30.csv", row.names = F)
+        write.csv(HOM30.results, file = "DataFile_HOMresultsPerPlot30.csv", row.names = F)
 #### 5. Statistical tests for HOM variation among plots and over time ####
 
   # Kruskal - Wallis test for differences among distributions of measurement heights among plots

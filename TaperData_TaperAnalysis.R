@@ -383,75 +383,44 @@ sitesNames <- c("Amacayacu",
     # With three variables
     model3a <- lme4::lmer(b1.iso~log(DBH) + log(HOM) + log(WSG) + (1|Site), data = TaperSample)
     
-    # Models WITH family random effect
-    
-    # Null model
-    modelnull.f <- lme4::lmer(b1.iso~ (1|Site) + (1|Family), data = TaperSample)
-    # With one variable
-    model1a.f <- lme4::lmer(b1.iso~log(DBH) + (1|Site) + (1|Family), data = TaperSample)
-    model1b.f <- lme4::lmer(b1.iso~log(HOM) + (1|Site) + (1|Family), data = TaperSample)
-    model1c.f <- lme4::lmer(b1.iso~log(WSG) + (1|Site) + (1|Family), data = TaperSample)
-    # With two variables
-    model2a.f <- lme4::lmer(b1.iso~log(DBH) + log(HOM) + (1|Site) + (1|Family), data = TaperSample)
-    model2b.f <- lme4::lmer(b1.iso~log(DBH) + log(WSG) + (1|Site) + (1|Family), data = TaperSample)
-    model2c.f <- lme4::lmer(b1.iso~log(HOM) + log(WSG) + (1|Site) + (1|Family), data = TaperSample)
-    # With three variables
-    model3a.f <- lme4::lmer(b1.iso~log(DBH) + log(HOM) + log(WSG) + (1|Site) + (1|Family), data = TaperSample)
-    
+
     # Make a table comparing models (for main text)    
-    ModelCompare <- anova(modelnull, model1a, model1b, model1c, model2a, model2b, model2c, model3a,
-                          modelnull.f, model1a.f, model1b.f, model1c.f, model2a.f, model2b.f, model2c.f, model3a.f)
+    ModelCompare <- anova(modelnull, model1a, model1b, model1c, model2a, model2b, model2c, model3a)
     ModelCompare$R2marginal <- c(MuMIn::r.squaredGLMM(modelnull)[1], 
                                  MuMIn::r.squaredGLMM(model1a)[1], 
                                  MuMIn::r.squaredGLMM(model1b)[1], 
                                  MuMIn::r.squaredGLMM(model1c)[1], 
-                                 MuMIn::r.squaredGLMM(modelnull.f)[1], 
                                  MuMIn::r.squaredGLMM(model2a)[1], 
                                  MuMIn::r.squaredGLMM(model2b)[1], 
                                  MuMIn::r.squaredGLMM(model2c)[1],
-                                 MuMIn::r.squaredGLMM(model1a.f)[1], 
-                                 MuMIn::r.squaredGLMM(model1b.f)[1], 
-                                 MuMIn::r.squaredGLMM(model1c.f)[1], 
-                                 MuMIn::r.squaredGLMM(model3a)[1], 
-                                 MuMIn::r.squaredGLMM(model2a.f)[1], 
-                                 MuMIn::r.squaredGLMM(model2b.f)[1], 
-                                 MuMIn::r.squaredGLMM(model2c.f)[1], 
-                                 MuMIn::r.squaredGLMM(model3a.f)[1])
+                                 MuMIn::r.squaredGLMM(model3a)[1])
     ModelCompare$R2conditional <- c(MuMIn::r.squaredGLMM(modelnull)[2], 
                                     MuMIn::r.squaredGLMM(model1a)[2], 
                                     MuMIn::r.squaredGLMM(model1b)[2], 
                                     MuMIn::r.squaredGLMM(model1c)[2], 
-                                    MuMIn::r.squaredGLMM(modelnull.f)[2], 
                                     MuMIn::r.squaredGLMM(model2a)[2], 
                                     MuMIn::r.squaredGLMM(model2b)[2], 
                                     MuMIn::r.squaredGLMM(model2c)[2],
-                                    MuMIn::r.squaredGLMM(model1a.f)[2], 
-                                    MuMIn::r.squaredGLMM(model1b.f)[2], 
-                                    MuMIn::r.squaredGLMM(model1c.f)[2], 
-                                    MuMIn::r.squaredGLMM(model3a)[2], 
-                                    MuMIn::r.squaredGLMM(model2a.f)[2], 
-                                    MuMIn::r.squaredGLMM(model2b.f)[2], 
-                                    MuMIn::r.squaredGLMM(model2c.f)[2], 
-                                    MuMIn::r.squaredGLMM(model3a.f)[2])
+                                    MuMIn::r.squaredGLMM(model3a)[2])
     ModelCompare$Description <- c(paste("b = ",round(summary(modelnull)$coefficients[1],3)," + Site", sep=""),
                                   paste("b = ",round(summary(model1a)$coefficients[1,1],3)," + ",round(summary(model1a)$coefficients[2,1],3),"*log(DAB) + Site", sep=""),
                                   paste("b = ",round(summary(model1b)$coefficients[1,1],3)," + ",round(summary(model1b)$coefficients[2,1],3),"*log(HOM) + Site", sep=""),
                                   paste("b = ",round(summary(model1c)$coefficients[1,1],3)," + ",round(summary(model1c)$coefficients[2,1],3),"*log(WSG) + Site", sep=""),
-                                  paste("b = ",round(summary(modelnull.f)$coefficients[1],3)," + Site + Family", sep=""),
                                   paste("b = ",round(summary(model2a)$coefficients[1,1],3)," + ",round(summary(model2a)$coefficients[2,1],3),"*log(DAB) ",round(summary(model2a)$coefficients[3,1],3),"*log(HOM) ", "+ Site", sep=""),
                                   paste("b = ",round(summary(model2b)$coefficients[1,1],3)," + ",round(summary(model2b)$coefficients[2,1],3),"*log(DAB) ",round(summary(model2b)$coefficients[3,1],3),"*log(WSG) ", "+ Site", sep=""),
                                   paste("b = ",round(summary(model2c)$coefficients[1,1],3)," + ",round(summary(model2c)$coefficients[2,1],3),"*log(HOM) ",round(summary(model2c)$coefficients[3,1],3),"*log(WSG) ", "+ Site", sep=""),
-                                  paste("b = ",round(summary(model1a.f)$coefficients[1,1],3)," + ",round(summary(model1a.f)$coefficients[2,1],3),"*log(DAB) + Site + Family", sep=""),
-                                  paste("b = ",round(summary(model1b.f)$coefficients[1,1],3)," + ",round(summary(model1b.f)$coefficients[2,1],3),"*log(HOM) + Site + Family", sep=""),
-                                  paste("b = ",round(summary(model1c.f)$coefficients[1,1],3)," + ",round(summary(model1c.f)$coefficients[2,1],3),"*log(WSG) + Site + Family", sep=""),
-                                  paste("b = ",round(summary(model3a)$coefficients[1,1],3)," + ",round(summary(model3a)$coefficients[2,1],3),"*log(DAB) ",round(summary(model3a)$coefficients[3,1],3),"*log(HOM) ",round(summary(model3a)$coefficients[4,1],3),"*log(WSG) ", "+ Site", sep=""),
-                                  paste("b = ",round(summary(model2a.f)$coefficients[1,1],3)," + ",round(summary(model2a.f)$coefficients[2,1],3),"*log(DAB) ",round(summary(model2a.f)$coefficients[3,1],3),"*log(HOM) ", "+ Site + Family", sep=""),
-                                  paste("b = ",round(summary(model2b.f)$coefficients[1,1],3)," + ",round(summary(model2b.f)$coefficients[2,1],3),"*log(DAB) ",round(summary(model2b.f)$coefficients[3,1],3),"*log(WSG) ", "+ Site + Family", sep=""),
-                                  paste("b = ",round(summary(model2c.f)$coefficients[1,1],3)," + ",round(summary(model2c.f)$coefficients[2,1],3),"*log(HOM) ",round(summary(model2c.f)$coefficients[3,1],3),"*log(WSG) ", "+ Site + Family", sep=""),
-                                  paste("b = ",round(summary(model3a.f)$coefficients[1,1],3)," + ",round(summary(model3a.f)$coefficients[2,1],3),"*log(DAB) ",round(summary(model3a.f)$coefficients[3,1],3),"*log(HOM) ",round(summary(model3a.f)$coefficients[4,1],3),"*log(WSG) ", "+ Site + Family", sep=""))
+                                  paste("b = ",round(summary(model3a)$coefficients[1,1],3)," + ",round(summary(model3a)$coefficients[2,1],3),"*log(DAB) ",round(summary(model3a)$coefficients[3,1],3),"*log(HOM) ",round(summary(model3a)$coefficients[4,1],3),"*log(WSG) ", "+ Site", sep=""))
     ModelCompare$Description <- as.character(ModelCompare$Description)
+    ModelCompare$RMSE <- c((mean((fitted(modelnull)-TaperSample$b1.iso)^2))^0.5,
+                           (mean((fitted(model1a)-TaperSample$b1.iso)^2))^0.5,
+                           (mean((fitted(model1b)-TaperSample$b1.iso)^2))^0.5,
+                           (mean((fitted(model1c)-TaperSample$b1.iso)^2))^0.5,
+                           (mean((fitted(model2a)-TaperSample$b1.iso)^2))^0.5,
+                           (mean((fitted(model2b)-TaperSample$b1.iso)^2))^0.5,
+                           (mean((fitted(model2c)-TaperSample$b1.iso)^2))^0.5,
+                           (mean((fitted(model3a)-TaperSample$b1.iso)^2))^0.5)
     
-    ModelResults <- ModelCompare[,c("Description","Df","AIC","R2marginal","R2conditional")]
+    ModelResults <- ModelCompare[,c("Description","Df","AIC","R2marginal","R2conditional","RMSE")]
     ModelResults <- ModelResults[order(ModelResults$AIC),]
     ModelResults$dAIC <- ModelResults$AIC-min(ModelResults$AIC)
     
@@ -583,12 +552,13 @@ sitesNames <- c("Amacayacu",
                                     TaperSample[TaperSample$Site=='HKK' & TaperSample$DBH>=30,'b1.iso'],
                                     TaperSample[TaperSample$Site=='KCH' & TaperSample$DBH>=30,'b1.iso']))
       
-      # Variance explained by fixed effects for site
-      summary(lm(log(b1.iso)~Site, data = TaperSample))
-      summary(lm(log(b1.iso)~Site+Family, data = TaperSample))
-      # try without log transform
-      summary(lm(b1.iso~Site, data = TaperSample))
-      summary(lm(b1.iso~Site+Family, data = TaperSample))
+      # one-way ANOVA for family
+        familyAnova <- aov(b1.iso~Family, data=TaperSample)
+        summary(familyAnova)
+        
+      # additional variation explained by family
+        model3a_fam <- lme4::lmer(b1.iso~log(DBH) + log(HOM) + log(WSG) + (1|Site) + (1|Family), data = TaperSample)
+        MuMIn::r.squaredGLMM(model3a_fam)
         
       # Look at distribution of values-- neither normal nor lognormal
         # Taper parameter
@@ -1135,68 +1105,30 @@ sitesNames <- c("Amacayacu",
       AGB_Results$AGB_CrossMed_Min95_Std <- AGB_Results$AGB_CrossMed_Min95/AGB_Results$AGB_Uncorrected
       AGB_Results$AGB_CrossMed_Max95_Std <- AGB_Results$AGB_CrossMed_Max95/AGB_Results$AGB_Uncorrected
 
-      
-      par(las=1)
-      plot(x=1:5,
-           y=AGB_Results$AGB_MeasTaper_Std,
-           ylab="AGB relative to uncorrected",
-           xlim=c(0.9,5.5),
-           ylim=c(1,1.3),
-           pch=19,
-           col="#253494",
-           xaxt="na",
-           xlab = NA)
-      # Add full taper model
-      arrows(x0=1:5+0.1, x1=1:5+0.1,
-             y0=AGB_Results$AGB_FullModel_Min95_Std, y1=AGB_Results$AGB_FullModel_Max95_Std,
-             length=0,
-             angle=90,
-             col="#2c7fb8",
-             lwd=2)
-      points(x=1:5+0.1, y=AGB_Results$AGB_FullModel_Mean_Std, pch=19, col="#2c7fb8")
-      # 3 parameter cross-validation
-      arrows(x0=1:5+0.2, x1=1:5+0.2,
-             y0=AGB_Results$AGB_Cross3Pr_Min95_Std, y1=AGB_Results$AGB_Cross3Pr_Max95_Std,
-             length=0,
-             angle=90,
-             col="#41b6c4",
-             lwd=2)
-      points(x=1:5+0.2, y=AGB_Results$AGB_Cross3Pr_Mean_Std, pch=19, col="#41b6c4")
-      # 2 parameter cross-validation
-      arrows(x0=1:5+0.3, x1=1:5+0.3,
-             y0=AGB_Results$AGB_Cross2Pr_Min95_Std, y1=AGB_Results$AGB_Cross2Pr_Max95_Std,
-             length=0,
-             angle=90,
-             col="#a1dab4",
-             lwd=2)
-      points(x=1:5+0.3, y=AGB_Results$AGB_Cross2Pr_Mean_Std, pch=19, col="#a1dab4")
-      # Add "median" taper value
-      arrows(x0=1:5+0.4, x1=1:5+0.4,
-             y0=AGB_Results$AGB_CrossMed_Min95_Std, y1=AGB_Results$AGB_CrossMed_Max95_Std,
-             length=0,
-             angle=90,
-             col="grey",
-             lwd=2)
-      points(x=1:5+0.4, y=AGB_Results$AGB_CrossMed_Mean_Std, pch=19, col="grey")
-      
-      abline(h=1,lty=2)
-      
-    legend(x=2.7,y=1.32,
-           c("Measured taper",
-             "Full model",
-             "Cross validation, 3 parameters",
-             "Cross validation, 2 parameters",
-             "Cross validation, single value"),
-           y.intersp = 0.7,
-           pch=19,
-           col=c("#253494","#2c7fb8","#41b6c4","#a1dab4","grey"),
-           bty="n")
-    
-    text(x=1.2,y=1.01,sitesNames[1], cex=0.7)
-    text(x=2.2,y=1.03,sitesNames[2], cex=0.7)
-    text(x=3.2,y=1.01,sitesNames[3], cex=0.7)
-    text(x=4.2,y=1.03,sitesNames[4], cex=0.7)
-    text(x=5.2,y=1.01,sitesNames[5], cex=0.7)
-    
+      # Mean, min, max from applying taper correction
+      mean(100*abs(AGB_Results$AGB_Uncorrected-AGB_Results$AGB_MeasTaper)/AGB_Results$AGB_Uncorrected)
+      min(100*abs(AGB_Results$AGB_Uncorrected-AGB_Results$AGB_MeasTaper)/AGB_Results$AGB_Uncorrected)
+      max(100*abs(AGB_Results$AGB_Uncorrected-AGB_Results$AGB_MeasTaper)/AGB_Results$AGB_Uncorrected)
 
-        
+      # Mean, min, max from applying Model 1
+      mean(100*abs(AGB_Results$AGB_FullModel_Mean-AGB_Results$AGB_MeasTaper)/AGB_Results$AGB_MeasTaper)
+      min(100*abs(AGB_Results$AGB_FullModel_Mean-AGB_Results$AGB_MeasTaper)/AGB_Results$AGB_MeasTaper)
+      max(100*abs(AGB_Results$AGB_FullModel_Mean-AGB_Results$AGB_MeasTaper)/AGB_Results$AGB_MeasTaper)
+      
+      # Mean, min, max from applying cross-validated model with 3 parameters
+      mean(100*abs(AGB_Results$AGB_Cross3Pr_Mean-AGB_Results$AGB_MeasTaper)/AGB_Results$AGB_MeasTaper)
+      min(100*abs(AGB_Results$AGB_Cross3Pr_Mean-AGB_Results$AGB_MeasTaper)/AGB_Results$AGB_MeasTaper)
+      max(100*abs(AGB_Results$AGB_Cross3Pr_Mean-AGB_Results$AGB_MeasTaper)/AGB_Results$AGB_MeasTaper)
+
+      # Mean, min, max from applying cross-validated model with 2 parameters
+      mean(100*abs(AGB_Results$AGB_Cross2Pr_Mean-AGB_Results$AGB_MeasTaper)/AGB_Results$AGB_MeasTaper)
+      min(100*abs(AGB_Results$AGB_Cross2Pr_Mean-AGB_Results$AGB_MeasTaper)/AGB_Results$AGB_MeasTaper)
+      max(100*abs(AGB_Results$AGB_Cross2Pr_Mean-AGB_Results$AGB_MeasTaper)/AGB_Results$AGB_MeasTaper)
+
+      # Mean, min, max from applying cross-validated model with 2 parameters
+      mean(100*abs(AGB_Results$AGB_CrossMed_Mean-AGB_Results$AGB_MeasTaper)/AGB_Results$AGB_MeasTaper)
+      min(100*abs(AGB_Results$AGB_CrossMed_Mean-AGB_Results$AGB_MeasTaper)/AGB_Results$AGB_MeasTaper)
+      max(100*abs(AGB_Results$AGB_CrossMed_Mean-AGB_Results$AGB_MeasTaper)/AGB_Results$AGB_MeasTaper)
+
+      
+      write.csv(AGB_Results, file="DataFile_BiomassEstimates.csv", row.names = F)

@@ -35,7 +35,9 @@
          xlab=NA, ylab=NA,
          cex.axis=cexAx)
     mtext("DAB (cm)", side=1, line=2.2, cex=axisSize)
-    mtext("taper \nparameter", side=2, line=7, cex=axisSize, adj=0)
+    par(las=0)
+    mtext("Taper parameter (b)", side=2, line=3.5, cex=axisSize)
+    par(las=1)
     text(x=19,y=0.15,"a", cex=textCex+0.1)
     
     taperDABlm <- lme4::lmer(b1.iso~log(DBH) + (1|Site), data = TaperSample)
@@ -114,30 +116,35 @@
   
     library(ggplot2)
   
-     taperPlot <- ggplot(TaperSample, aes(x=Site, y=b1.iso, fill=Site)) + 
-       geom_violin(trim=F) +
-       labs(x="", y = "Tree taper parameter (b)") +
-       scale_fill_manual(values = as.character(site.cols$col)) +
-       theme_minimal() +   
-       theme(axis.text.x=element_blank(),
-             axis.title.x=element_blank(),
-             axis.ticks.x=element_blank()) + 
-       #geom_point(data=TaperBySite,aes(x=Site, y = Mean), colour="white", shape=17, show.legend=F) + 
-       #geom_point(data=TaperBySite,aes(x=Site, y = Mean.BA), colour="white", shape=15, show.legend=F) +
-       geom_point(data=TaperBySite,aes(x=Site, y = Mean.AGB), colour="white", shape=19, show.legend=F)
-     
-    circPlot <- ggplot(CircSample, aes(x=Site, y=iso, fill=Site)) + 
-       geom_violin(trim=F) +
-       labs(x="", y = "Tree circularity") +
-       scale_fill_manual(values = as.character(site.cols$col)) +
-       theme_minimal() +   
-       theme(axis.text.x=element_blank(),
-             axis.title.x=element_blank(),
-             axis.ticks.x=element_blank()) + 
-       #geom_point(data=CircBySite,aes(x=Site, y = Mean), colour="white", shape=17, show.legend=F) + 
-       #geom_point(data=CircBySite,aes(x=Site, y = Mean.BA), colour="white", shape=15, show.legend=F) +
-       geom_point(data=CircBySite,aes(x=Site, y = Mean.AGB), colour="white", shape=19, show.legend=F)
-          
+      taperPlot <- ggplot(TaperSample, aes(x=Site, y=b1.iso, fill=Site)) + 
+        geom_violin(trim=F) +
+        labs(x="", y = "Tree taper parameter (b)") +
+        scale_fill_manual(values = as.character(site.cols$col)) +
+        scale_y_continuous(breaks=seq(-0.05,0.15,0.05)) +
+        theme_bw() +
+        theme(panel.border = element_rect(colour = "black"), panel.grid.major = element_blank(),
+              panel.grid.minor = element_blank(), axis.line = element_blank(),
+              axis.text.x=element_blank(),
+              axis.title.x=element_blank(),
+              axis.ticks.x=element_blank()) + 
+        #geom_point(data=TaperBySite,aes(x=Site, y = Mean), colour="white", shape=17, show.legend=F) + 
+        #geom_point(data=TaperBySite,aes(x=Site, y = Mean.BA), colour="white", shape=15, show.legend=F) +
+        geom_point(data=TaperBySite,aes(x=Site, y = Mean.AGB), colour="white", shape=16, show.legend=F)
+      
+      circPlot <- ggplot(CircSample, aes(x=Site, y=iso, fill=Site)) + 
+        geom_violin(trim=F) +
+        labs(x="", y = "Tree circularity") +
+        scale_fill_manual(values = as.character(site.cols$col)) +
+        theme_bw() +
+        theme(panel.border = element_rect(colour = "black"), panel.grid.major = element_blank(),
+              panel.grid.minor = element_blank(), axis.line = element_blank(),
+              axis.text.x=element_blank(),
+              axis.title.x=element_blank(),
+              axis.ticks.x=element_blank()) + 
+        #geom_point(data=CircBySite,aes(x=Site, y = Mean), colour="white", shape=17, show.legend=F) + 
+        #geom_point(data=CircBySite,aes(x=Site, y = Mean.BA), colour="white", shape=15, show.legend=F) +
+        geom_point(data=CircBySite,aes(x=Site, y = Mean.AGB), colour="white", shape=16, show.legend=F)
+      
     homPlot <- ggplot(HomSample, aes(x=Site, y=hom, fill=Site)) + 
       geom_violin(trim=T) +
       scale_y_log10() +
@@ -149,12 +156,12 @@
             axis.ticks.x=element_blank()) + 
       #geom_point(data=HOM.results,aes(x=Site, y = MeanHOM), colour="grey", shape=17, show.legend=F) + 
       #geom_point(data=HOM.results,aes(x=Site, y = MeanHOM.BA), colour="grey", shape=15, show.legend=F) +
-      geom_point(data=HOM.results,aes(x=Site, y = MeanHOM.AGB), colour="grey", shape=19, show.legend=F)
+      geom_point(data=HOM.results,aes(x=Site, y = MeanHOM.AGB), colour="grey", shape=16, show.legend=F)
     
     
-    tiff(width=3, height=5, file="Figure3_TrunkTaperCircularityViolins.tiff",res=300,units="in")
+    pdf(width=4.5, height=5.5, file="Figure3_TrunkTaperCircularityViolins.pdf")
       
-     par(xpd=F,family="sans", mfrow=c(2,1), las=1, oma=c(1,4,0,0), mar=c(3,4,1,1))  
+     par(xpd=F,family="sans", mfrow=c(2,1), las=1, oma=c(1,4,0,3), mar=c(3,4,1,1))  
      
      cowplot::plot_grid(taperPlot,circPlot,
                    labels = c("a","b"),
@@ -184,7 +191,7 @@
   
   tiff(file="Figure4_MeasHtChangesOverTime.tiff",width=3,height=6, units="in", res=300, family = "sans")
 
-    par(mfrow=c(3,1), mar=c(1,6,1,1),oma=c(2,1,0,0), family="sans", xpd=F, las=1)
+    par(mfrow=c(3,1), mar=c(1,3,1,1),oma=c(2,1,0,0), family="sans", xpd=F, las=1)
     
     plot(x=HOM.results$Year, y=HOM.results$Prop*100,
          type='n',
@@ -192,7 +199,9 @@
          xlab=NA,
          xaxt = "n",
          cex.axis=cexAx)
-    mtext("% of \nstems", side=2, line=6.8, cex=axisSize, adj=0)
+    par(las=0)
+    mtext("Stems (%)", side=2, line=2.5, cex=axisSize)
+    par(las=1)
     text(x=1990.5,y=97,"a", cex=textCex+0.3)
     
     for(i in 1:length(sites)){
@@ -215,7 +224,9 @@
          xlab=NA,
          xaxt = "n",
          cex.axis=cexAx)
-    mtext("% of \nbasal \narea", side=2, line=6.8, cex=axisSize, adj=0)
+    par(las=0)
+    mtext("Basal area (%)", side=2, line=2.5, cex=axisSize)
+    par(las=1)
     text(x=1990.5,y=97,"b", cex=textCex+0.3)
     for(i in 1:length(sites)){
         points(x=HOM.results[HOM.results$Site==sites[i],"Year"],
@@ -231,7 +242,9 @@
          xlab=NA,
          cex.axis=cexAx)
     mtext("Census year", side=1, line=2, cex=axisSize)
-    mtext("Average \nHOM (m)", side=2, line=6.8, cex=axisSize, adj=0)
+    par(las=0)
+    mtext("Average HOM (m)", side=2, line=2.5, cex=axisSize)
+    par(las=1)
     text(x=1990.5,y=3.14,"c", cex=textCex+0.3)
     for(i in 1:length(sites)){
         points(x=HOM.results[HOM.results$Site==sites[i],"Year"],
@@ -243,3 +256,75 @@
   dev.off()
   
   
+#### Figure 5: Compare biomass estimates from different taper models ####
+  AGB_Results <- read.csv("DataFile_BiomassEstimates.csv")
+  
+  tiff(file="Figure5_BiomassEstimates.tiff",width=6,height=4, units="in", res=400, family = "sans")
+
+    par(mfrow=c(1,1), mar=c(3,3,1,1),oma=c(1,1,1,1), family="sans", xpd=F, las=1)
+        
+      plot(x=1:5,
+           y=AGB_Results$AGB_MeasTaper_Std,
+           ylab="AGB relative to uncorrected",
+           xlim=c(0.9,5.5),
+           ylim=c(1,1.3),
+           pch=19,
+           col="#253494",
+           xaxt="na",
+           xlab = NA)
+      # Add full taper model
+      arrows(x0=1:5+0.1, x1=1:5+0.1,
+             y0=AGB_Results$AGB_FullModel_Min95_Std, y1=AGB_Results$AGB_FullModel_Max95_Std,
+             length=0,
+             angle=90,
+             col="#2c7fb8",
+             lwd=2)
+      points(x=1:5+0.1, y=AGB_Results$AGB_FullModel_Mean_Std, pch=19, col="#2c7fb8")
+      # 3 parameter cross-validation
+      arrows(x0=1:5+0.2, x1=1:5+0.2,
+             y0=AGB_Results$AGB_Cross3Pr_Min95_Std, y1=AGB_Results$AGB_Cross3Pr_Max95_Std,
+             length=0,
+             angle=90,
+             col="#41b6c4",
+             lwd=2)
+      points(x=1:5+0.2, y=AGB_Results$AGB_Cross3Pr_Mean_Std, pch=19, col="#41b6c4")
+      # 2 parameter cross-validation
+      arrows(x0=1:5+0.3, x1=1:5+0.3,
+             y0=AGB_Results$AGB_Cross2Pr_Min95_Std, y1=AGB_Results$AGB_Cross2Pr_Max95_Std,
+             length=0,
+             angle=90,
+             col="#a1dab4",
+             lwd=2)
+      points(x=1:5+0.3, y=AGB_Results$AGB_Cross2Pr_Mean_Std, pch=19, col="#a1dab4")
+      # Add "median" taper value
+      arrows(x0=1:5+0.4, x1=1:5+0.4,
+             y0=AGB_Results$AGB_CrossMed_Min95_Std, y1=AGB_Results$AGB_CrossMed_Max95_Std,
+             length=0,
+             angle=90,
+             col="grey",
+             lwd=2)
+      points(x=1:5+0.4, y=AGB_Results$AGB_CrossMed_Mean_Std, pch=19, col="grey")
+      
+      abline(h=1,lty=2)
+      
+    legend(x=3.2,y=1.32,
+           c("Measured taper",
+             "Model 1 (Table 3)",
+             "Cross validation, 3 fixed effects",
+             "Cross validation, 2 fixed effects",
+             "Cross validation, single taper value"),
+           y.intersp = 0.75,
+           cex = 0.8,
+           pch=19,
+           col=c("#253494","#2c7fb8","#41b6c4","#a1dab4","grey"),
+           bty="n")
+    
+    text(x=1.2,y=1.01,sitesNames[1], cex=0.8)
+    text(x=2.2,y=1.03,sitesNames[2], cex=0.8)
+    text(x=3.2,y=1.01,sitesNames[3], cex=0.8)
+    text(x=4.2,y=1.03,sitesNames[4], cex=0.8)
+    text(x=5.2,y=1.01,sitesNames[5], cex=0.8)
+    par(las=0)
+    mtext("Relative AGB", side=2,line = 3)
+    
+  dev.off()

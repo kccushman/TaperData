@@ -27,28 +27,53 @@
   
   site.cols$col <- as.character(site.cols$col)
         
-###### Tables S5-6:Random intercept values for family and site #####
+###### Table S5:Random intercept values for family and site #####
   
   # Best taper models from model comparison 
   
   # Model 1 (no family effects)
-    model3a.f <- lme4::lmer(b1.iso~log(DBH) + log(HOM) + log(WSG) + (1|Site) + (1|Family), data = TaperSample)
+    model3a <- lme4::lmer(b1.iso~log(DBH) + log(HOM) + log(WSG) + (1|Site) , data = TaperSample)
     
-    FamilyCoefs1 <- data.frame(Group=c(rownames(coef(model3a.f)[[1]])),
-                               Intercept=c(coef(model3a.f)[[1]][,1]))
-    SiteCoefs1 <- data.frame(Group=c(rownames(coef(model3a.f)[[2]])),
-                             Intercept=c(coef(model3a.f)[[2]][,1]))
-  
-  # Model 2 (with family effects)
-    model2a.f <- lme4::lmer(b1.iso~log(DBH) + log(HOM) + (1|Site) + (1|Family), data = TaperSample)
+    SiteCoefs1 <- data.frame(Group=c(rownames(coef(model3a)[[1]])),
+                               Intercept=c(coef(model3a)[[1]][,1]))
     
-    FamilyCoefs2 <- data.frame(Group=c(rownames(coef(model2a.f)[[1]])),
-                               Intercept=c(coef(model2a.f)[[1]][,1]))
-    SiteCoefs2 <- data.frame(Group=c(rownames(coef(model2a.f)[[2]])),
-                             Intercept=c(coef(model2a.f)[[2]][,1]))
-    
-    write.csv(rbind(SiteCoefs1,FamilyCoefs1,SiteCoefs2,FamilyCoefs2), row.names = F, file="TablesS5and6_RandomIntercepts.csv")
+    write.csv(SiteCoefs1, row.names = F, file="TableS5_RandomIntercepts.csv")
 
+###### Table S6:Taper values by family #####
+
+  # Are there significant differences among families?
+    summary(aov(b1.iso~Family, TaperSample))
+    
+  # Aggregate - mean Taperularity by family
+  FamilyTaper <- aggregate(TaperSample$b1.iso, by=list(TaperSample$Family), FUN="mean")
+  # Aggregate - SD Taperularity by family  
+  FamilyTaperSD <- aggregate(TaperSample$b1.iso, by=list(TaperSample$Family), FUN="sd")
+  # Aggregate - total sample size by family  
+  FamilyTaperCount <- aggregate(TaperSample$b1.iso, by=list(TaperSample$Family), FUN="length")
+  
+  # Put results into data frame
+  TaperTable <- data.frame(Family=FamilyTaper$Group.1, 
+                          Taperularity=paste(round(FamilyTaper$x,2)," (",round(FamilyTaperSD$x,2),")", sep=""),
+                          SampleSize=FamilyTaperCount$x,
+                          SampleAMA=NA,
+                          SampleBCI=NA,
+                          SampleBKT=NA,
+                          SampleHKK=NA,
+                          SampleKCH=NA)
+  # Sort by sample size
+  TaperTable <- TaperTable[order(-TaperTable$SampleSize),]
+  
+  # Find the sample size per plot
+  for(i in 1:length(TaperTable$Family)){
+    TaperTable[i,"SampleAMA"] <- length(TaperSample[TaperSample$Family==TaperTable$Family[i] & TaperSample$Site=="AMA","Tag"])
+    TaperTable[i,"SampleBCI"] <- length(TaperSample[TaperSample$Family==TaperTable$Family[i] & TaperSample$Site=="BCI","Tag"])
+    TaperTable[i,"SampleBKT"] <- length(TaperSample[TaperSample$Family==TaperTable$Family[i] & TaperSample$Site=="BKT","Tag"])
+    TaperTable[i,"SampleHKK"] <- length(TaperSample[TaperSample$Family==TaperTable$Family[i] & TaperSample$Site=="HKK","Tag"])
+    TaperTable[i,"SampleKCH"] <- length(TaperSample[TaperSample$Family==TaperTable$Family[i] & TaperSample$Site=="KCH","Tag"])
+  }
+  
+  write.csv(TaperTable, file="TableS6_TaperByFamily.csv", row.names = F)  
+  
 ###### Table S7:Circularity values by family #####
   # Make a data frame with trees with circularity measurement at the HOM
   CircSample <- TreeSample[!is.na(TreeSample$iso),]
@@ -84,9 +109,8 @@
     CircTable[i,"SampleKCH"] <- length(CircSample[CircSample$Family==CircTable$Family[i] & CircSample$Site=="KCH","Tag"])
   }
   
-  write.csv(CircTable, file="Table S7_Circularity by family.csv", row.names = F)  
+  write.csv(CircTable, file="TableS7_Circularity by family.csv", row.names = F)  
   
-
 ###### Table S8: HOM tests by site ######
     HOM.results <- read.csv("Data file_HOMresultsPerPlot.csv")
     load("ForestGEO_CensusData.RData")
@@ -145,6 +169,7 @@
                              Pval=c(AMA.HOM.test$p.value, BCI.HOM.test$p.value,HKK.HOM.test$p.value,
                                     KCH.HOM.test$p.value))
     write.csv(HomTestTable, file="TableS8_MeasHeightsWithinPlots.csv", row.names = F)
+
 ###### Table S9: HOM variation by family #####
   RecentHOM <- rbind(AMA.cens[[2]][!duplicated(AMA.cens[[2]]$StemID),c("Family", "Site","hom","dbh")], BCI.cens[[6]][!duplicated(BCI.cens[[6]]$StemID),c("Family", "Site","hom","dbh")], 
                      BKT.cens[[1]][!duplicated(BKT.cens[[1]]$StemID),c("Family", "Site","hom","dbh")], HKK.cens[[4]][!duplicated(HKK.cens[[4]]$StemID),c("Family", "Site","hom","dbh")],
@@ -275,7 +300,7 @@
     
     results.opt <- ifelse(length(opt.i$ht)==0,NA,
                           Fit.Eqn1(
-                            par=c(sigma=1,DBH=info.i$DBH[1]/10,b1=0.05),
+                            par=c(sigma=1,DBH=info.i$DBH[1],b1=0.05),
                             h=opt.i$ht, d=opt.i$diam))
     
     TaperSample[TaperSample$Tag==optical.trees[i],"b1.opt"] <- ifelse(is.na(results.opt), NA,
@@ -313,30 +338,31 @@
   
   TaperCompare <- TaperSample[TaperSample$b1.opt>=0 & TaperSample$b1.iso>=0 & !is.na(TaperSample$b1.opt),]
   # Use a Deming regression
-  OptReg=mcreg(TaperCompare$b1.iso,TaperCompare$b1.opt,method.reg="Deming",error.ratio=1,method.ci="analytical")
-  getCoefficients(OptReg)
+  OptReg=mcr::mcreg(x=TaperCompare$b1.iso,y=TaperCompare$b1.opt,method.reg="Deming",error.ratio=1,method.ci="analytical")
+  mcr::getCoefficients(OptReg)
   
   newx <- seq(min(TaperCompare$b1.iso), max(TaperCompare$b1.iso), length.out=100)
-  preds <- MCResultAnalytical.calcResponse(OptReg, x.levels = newx, alpha=0.05)
+  preds <- mcr::MCResultAnalytical.calcResponse(OptReg, x.levels = newx, alpha=0.05)
   
-  tiff(width=5, height=5, file="Figure S4_Optical dendrometer vs 3-D model.tiff",res=300,units="in")
-    par(family="serif")
+  tiff(width=5, height=5, file="FigureS4_Optical dendrometer vs 3-D model.tiff",res=300,units="in")
+    par(family="sans")
     plot(b1.opt~b1.iso, data=TaperCompare,
+         ylim=c(-0.4,0.4),
+         #ylim=range(TaperCompare$b1.opt)+c(-0.015,0),
          pch=20,
          xlab=NA,
-         ylab=NA, 
-         ylim=range(TaperCompare$b1.opt)+c(-0.015,0))
-     abline(a=getCoefficients(OptReg)[1,1],b=getCoefficients(OptReg)[2,1],lwd=2)
-    # lines(x=preds[,1],y=preds[,4],lwd=2,lty=2)
-    # lines(x=preds[,1],y=preds[,5],lwd=2,lty=2)
+         ylab=NA)
+     abline(a=mcr::getCoefficients(OptReg)[1,1],b=mcr::getCoefficients(OptReg)[2,1],lwd=2)
+     lines(x=preds[,1],y=preds[,4],lwd=2,lty=2)
+     lines(x=preds[,1],y=preds[,5],lwd=2,lty=2)
     abline(a=0,b=1,col="red",lwd=2,lty=2)
     mtext("3-D model taper parameter", side=1, line=2)
     mtext("Optical dendrometer taper parameter", side=2, line=2)
-     legend(x=0.035, y=0.005,
-            c("Regression line","1-1 line"),
+     legend(x=0.025, y=-0.1,
+            c("Regression line","95% CI","1-1 line"),
             lwd=2,
-            col=c("black","red"),
-            lty=c(1,2),
+            col=c("black","black","red"),
+            lty=c(1,2,2),
             bty='n')
   dev.off()
   
@@ -382,82 +408,53 @@
 ###### Figure S6: Distribution of model residuals #####
   
   # Read in data file for taper parameter sample and define the taper model used in the biomass estimation routine
-  model3a.f <- lme4::lmer(b1.iso~log(DBH) + log(HOM) + log(WSG) + (1|Site) + (1|Family), data = TaperSample)
-  model2a.f <- lme4::lmer(b1.iso~log(DBH) + log(HOM) + (1|Site) + (1|Family), data = TaperSample)
+  model3a <- lme4::lmer(b1.iso~log(DBH) + log(HOM) + log(WSG) + (1|Site), data = TaperSample)
 
-  tiff(width=7, height=7.5, file="FigureS6_DistributionOfModelResiduals.tiff",res=300,units="in")
-  par(mfrow=c(3,3),mar=c(4,3,1,1),oma = c(0,3,0,0), family="sans")
+  tiff(width=6, height=4, file="FigureS6_DistributionOfModelResiduals.tiff",res=300,units="in")
+  par(mfrow=c(2,2),mar=c(4,3,1,1),oma = c(0,3,0,0), family="sans")
   
   # NO family fixed effects
-  plot(x=fitted(model3a.f),
-       y=residuals(model3a.f),
+  plot(x=fitted(model3a),
+       y=residuals(model3a),
        xlab=NA, ylab=NA,
        pch=20, col=adjustcolor("black",alpha.f=0.5),
        cex=1.2, cex.axis=1.5)
   mtext("Fitted value", side=1, line=2)
   mtext("Residual value", side=2, outer=T)
   abline(h=0,lty=2)
-  text("a", x=0, y=0.07, cex=1.4)
+  text("a", x=0.005, y=0.08, cex=1.4)
   
-  plot(x=model3a.f@frame$`log(DBH)`,
-       y=residuals(model3a.f),
+  plot(x=model3a@frame$`log(DBH)`,
+       y=residuals(model3a),
        xlab=NA, ylab= NA,
        pch=20, col=adjustcolor("black",alpha.f=0.5),
        cex=1.2, cex.axis=1.5)
   mtext("log(DAB)", side=1, line=2)
-  text("b", x=3, y=0.07, cex=1.4)
+  text("b", x=3, y=0.08, cex=1.4)
   abline(h=0,lty=2)
   
-  plot(x=model3a.f@frame$`log(HOM)`,
-       y=residuals(model3a.f),
+  plot(x=model3a@frame$`log(HOM)`,
+       y=residuals(model3a),
        xlab=NA, ylab= NA,
        pch=20, col=adjustcolor("black",alpha.f=0.5),
        cex=1.2, cex.axis=1.5)
   mtext("log(HOM)", side=1, line=2)
-  text("c", x=0.4, y=0.07, cex=1.4)
+  text("c", x=0.4, y=0.08, cex=1.4)
   abline(h=0,lty=2)
   
-  plot(x=model3a.f@frame$`log(WSG)`,
-       y=residuals(model3a.f),
+  plot(x=model3a@frame$`log(WSG)`,
+       y=residuals(model3a),
        xlab=NA, ylab= NA,
        pch=20, col=adjustcolor("black",alpha.f=0.5),
        cex=1.2, cex.axis=1.5)
   mtext("log(WSG)", side=1, line=2)
-  text("d", x=-1.3, y=0.07, cex=1.4)
-  abline(h=0,lty=2)
-  
-  # Model 2
-  plot(x=fitted(model2a.f),
-       y=residuals(model2a.f),
-       xlab=NA, ylab=NA,
-       pch=20, col=adjustcolor("black",alpha.f=0.5),
-       cex=1.2, cex.axis=1.5)
-  mtext("Fitted value", side=1, line=2)
-  abline(h=0,lty=2)
-  text("e", x=0.003, y=0.07, cex=1.4)
-  
-  plot(x=model2a.f@frame$`log(DBH)`,
-       y=residuals(model2a.f),
-       xlab=NA, ylab= NA,
-       pch=20, col=adjustcolor("black",alpha.f=0.5),
-       cex=1.2, cex.axis=1.5)
-  mtext("log(DAB)", side=1, line=2)
-  text("f", x=3, y=0.07, cex=1.4)
-  abline(h=0,lty=2)
-  
-  plot(x=model2a.f@frame$`log(HOM)`,
-       y=residuals(model2a.f),
-       xlab=NA, ylab= NA,
-       pch=20, col=adjustcolor("black",alpha.f=0.5),
-       cex=1.2, cex.axis=1.5)
-  mtext("log(HOM)", side=1, line=2)
-  text("g", x=0.4, y=0.07, cex=1.4)
+  text("d", x=-1.195, y=0.08, cex=1.4)
   abline(h=0,lty=2)
   
   dev.off()
 
 ###### Figure S7: Nonstandard measurement heights for trees >= 30 cm ######
-  HOM.results <- read.csv("Data file_HOMresultsPerPlot30.csv")
+  HOM.results <- read.csv("DataFile_HOMresultsPerPlot30.csv")
   
   axisSize <- 0.9
   cexAx <- 1.1
