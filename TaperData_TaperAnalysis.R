@@ -1132,3 +1132,60 @@ sitesNames <- c("Amacayacu",
 
       
       write.csv(AGB_Results, file="DataFile_BiomassEstimates.csv", row.names = F)
+      
+#### Why do sites have the errors that they do? ####
+  model.full <- lme4::lmer(b1.iso~log(DBH) + log(HOM) + log(WSG) + (1|Site), data = TaperSample)      
+  TaperSample$b.mod <- predict(model.full, newdata = TaperSample)
+  TaperSample$res <- TaperSample$b.mod - TaperSample$b1.iso
+  
+  plot(res~DBH, data = TaperSample[TaperSample$Site=="AMA",], pch=20)
+    abline(h=0)
+
+  plot(res~DBH, data = TaperSample[TaperSample$Site=="BCI",], pch=20)
+    abline(h=0)
+
+  plot(res~DBH, data = TaperSample[TaperSample$Site=="BKT",], pch=20)
+    abline(h=0)
+
+  plot(res~DBH, data = TaperSample[TaperSample$Site=="HKK",], pch=20)
+    abline(h=0)
+
+  plot(res~DBH, data = TaperSample[TaperSample$Site=="KCH",], pch=20)
+    abline(h=0)
+    
+    TaperSample <- TaperSample[order(TaperSample$Site,-TaperSample$DBH),]
+    
+    ModelAvgError <- data.frame(Site = sites,
+                                Error = 100*(AGB_Results$AGB_FullModel_Mean-AGB_Results$AGB_MeasTaper)/AGB_Results$AGB_MeasTaper,
+                                LgTreeBias = NA)
+    for(i in 1:length(sites)){
+      ModelAvgError$LgTreeBias[i] <- mean(head(TaperSample[TaperSample$Site==sites[i],"res"],10))
+    }
+    
+    plot(Error~LgTreeBias, data=ModelAvgError,
+         pch=20)
+    abline(h=0)
+    abline(v=0)
+    
+    plot(b1.iso~WSG, data=TaperSample[TaperSample$Site=="AMA",])
+    plot(b1.iso~WSG, data=TaperSample[TaperSample$Site=="BCI",])
+    plot(b1.iso~WSG, data=TaperSample[TaperSample$Site=="BKT",])
+    plot(b1.iso~WSG, data=TaperSample[TaperSample$Site=="HKK",])
+    plot(b1.iso~WSG, data=TaperSample[TaperSample$Site=="KCH",])
+    
+    summary(lm(b1.iso~WSG, data=TaperSample[TaperSample$Site=="AMA",]))
+    summary(lm(b1.iso~WSG, data=TaperSample[TaperSample$Site=="BCI",]))
+    summary(lm(b1.iso~WSG, data=TaperSample[TaperSample$Site=="BKT",]))
+    summary(lm(b1.iso~WSG, data=TaperSample[TaperSample$Site=="HKK",]))
+    summary(lm(b1.iso~WSG, data=TaperSample[TaperSample$Site=="KCH",]))
+
+
+    summary(lm(b1.iso~HOM, data=TaperSample[TaperSample$Site=="AMA",]))
+    summary(lm(b1.iso~HOM, data=TaperSample[TaperSample$Site=="BCI",]))
+    summary(lm(b1.iso~HOM, data=TaperSample[TaperSample$Site=="BKT",]))
+    summary(lm(b1.iso~HOM, data=TaperSample[TaperSample$Site=="HKK",]))
+    summary(lm(b1.iso~HOM, data=TaperSample[TaperSample$Site=="KCH",]))
+
+    model.fam <- lme4::lmer(b1.iso~ (1|Family), data = TaperSample) 
+    MuMIn::r.squaredGLMM(model.fam)
+

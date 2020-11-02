@@ -267,7 +267,7 @@
            y=AGB_Results$AGB_MeasTaper_Std,
            ylab="AGB relative to uncorrected",
            xlim=c(0.9,5.5),
-           ylim=c(1,1.3),
+           ylim=c(1,1.35),
            pch=19,
            col="#253494",
            xaxt="na",
@@ -307,12 +307,12 @@
       
       abline(h=1,lty=2)
       
-    legend(x=3.2,y=1.32,
+    legend(x=1,y=1.37,
            c("Measured taper",
-             "Model 1 (Table 3)",
-             "Cross validation, 3 fixed effects",
-             "Cross validation, 2 fixed effects",
-             "Cross validation, single taper value"),
+             "Taper modeled from DAB, HOM, and WSG, all sites (Model 1, Table 3)",
+             "Taper modeled from DAB, HOM and WSG, other sites",
+             "Taper modeled from DAB and HOM, other sites",
+             "Biomass-weighted median taper, other sites"),
            y.intersp = 0.75,
            cex = 0.8,
            pch=19,
