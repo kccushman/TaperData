@@ -26,6 +26,8 @@
   axisSize <- 1
   textCex <- 1.4
   
+  model3a <- lme4::lmer(b1.iso~log(DBH) + log(HOM) + log(WSG) + (1|Site), data = TaperSample)
+
   tiff(file="Figure2_TaperParameterVariation.tiff", height=3, width=8, units="in", res=300)
     par(mfrow=c(1,3), mar=c(4,2,0,0), xpd=F,family="sans", las=1, oma=c(0,5,1,1))
 
@@ -40,13 +42,18 @@
     par(las=1)
     text(x=19,y=0.15,"a", cex=textCex+0.1)
     
-    taperDABlm <- lme4::lmer(b1.iso~log(DBH) + (1|Site), data = TaperSample)
     for(i in 1:length(sites)){
       points(b1.iso~DBH, data=TaperSample[TaperSample$Site==sites[i],],
              col=site.cols[site.cols$site==sites[i],"col"], pch=20)
+      
       xrange=seq(from=min(TaperSample[TaperSample$Site==sites[i],"DBH"]),
                  to=max(TaperSample[TaperSample$Site==sites[i],"DBH"]),0.1)
-      ypred=predict(taperDABlm,newdata=data.frame(DBH=xrange, Site=sites[i]))
+      
+      ypred=predict(model3a,newdata=data.frame(DBH=xrange,
+                                                  Site=sites[i],
+                                                  HOM = mean(TaperSample[TaperSample$Site==sites[i],"HOM"]),
+                                                  WSG = mean(TaperSample[TaperSample$Site==sites[i],"WSG"])))
+      
       lines(x=xrange,y=ypred, col=site.cols[site.cols$site==sites[i],"col"],
             lwd=2)
     }
@@ -65,13 +72,19 @@
          cex.axis=cexAx)
   mtext("HOM (cm)", side=1, line=2.2, cex=axisSize)
   text(x=1.47,y=0.15,"b", cex=textCex+0.1)
-    taperHOMlm <- lme4::lmer(b1.iso~log(HOM) + (1|Site), data = TaperSample)
+
     for(i in 1:length(sites)){
       points(b1.iso~HOM, data=TaperSample[TaperSample$Site==sites[i],],
              col=site.cols[site.cols$site==sites[i],"col"], pch=20)
+      
       xrange=seq(from=min(TaperSample[TaperSample$Site==sites[i],"HOM"]),
                  to=max(TaperSample[TaperSample$Site==sites[i],"HOM"]),0.1)
-      ypred=predict(taperHOMlm,newdata=data.frame(HOM=xrange, Site=sites[i]))
+      
+      ypred=predict(model3a,newdata=data.frame(DBH=mean(TaperSample[TaperSample$Site==sites[i],"DBH"]),
+                                               Site=sites[i],
+                                               HOM = xrange,
+                                               WSG = mean(TaperSample[TaperSample$Site==sites[i],"WSG"])))
+      
       lines(x=xrange,y=ypred, col=site.cols[site.cols$site==sites[i],"col"],
             lwd=2)
     }
@@ -88,9 +101,15 @@
     for(i in 1:length(sites)){
       points(b1.iso~WSG, data=TaperSample[TaperSample$Site==sites[i],],
              col=site.cols[site.cols$site==sites[i],"col"], pch=20)
+      
       xrange=seq(from=min(TaperSample[TaperSample$Site==sites[i],"WSG"]),
                  to=max(TaperSample[TaperSample$Site==sites[i],"WSG"]),0.1)
-      ypred=predict(taperWSGlm,newdata=data.frame(WSG=xrange, Site=sites[i]))
+      
+      ypred=predict(model3a,newdata=data.frame(DBH=mean(TaperSample[TaperSample$Site==sites[i],"DBH"]),
+                                               Site=sites[i],
+                                               HOM = mean(TaperSample[TaperSample$Site==sites[i],"HOM"]),
+                                               WSG = xrange))
+      
       lines(x=xrange,y=ypred, col=site.cols[site.cols$site==sites[i],"col"],
             lwd=2)
    }
