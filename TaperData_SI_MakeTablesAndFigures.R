@@ -31,13 +31,50 @@
   
   # Best taper models from model comparison 
   
-  # Model 1 (no family effects)
-    model3a <- lme4::lmer(b1.iso~log(DBH) + log(HOM) + log(WSG) + (1|Site) , data = TaperSample)
+  # Model 1
+    model1 <- lme4::lmer(b1.iso~log(DBH) + log(HOM) + log(WSG) + (1|Site) , data = TaperSample)
+  # Model 2
+    model2 <- lme4::lmer(b1.iso~log(DBH) + log(HOM) + (1|Site), data = TaperSample)
+  # Model 3
+    model3 <- lme4::lmer(b1.iso~log(DBH) + log(WSG) + (1|Site), data = TaperSample)
+  # Model 4
+    model4 <- lme4::lmer(b1.iso~log(DBH) + (1|Site), data = TaperSample)
+  # Model 5
+    model5 <- lme4::lmer(b1.iso~log(HOM) + log(WSG) + (1|Site), data = TaperSample)
+  # Model 6
+    model6 <- lme4::lmer(b1.iso~log(HOM) + (1|Site), data = TaperSample)
+  # Model 7
+    model7 <- lme4::lmer(b1.iso~log(WSG) + (1|Site), data = TaperSample)
+  # Model 8
+    model8 <- lme4::lmer(b1.iso~ (1|Site), data = TaperSample)
+  
+    SiteCoefs1 <- data.frame(Model = 1,
+                             Group=c(rownames(coef(model1)[[1]])),
+                             Intercept=c(coef(model1)[[1]][,1]))
+    SiteCoefs2 <- data.frame(Model = 2,
+                             Group=c(rownames(coef(model2)[[1]])),
+                             Intercept=c(coef(model2)[[1]][,1]))
+    SiteCoefs3 <- data.frame(Model = 3,
+                             Group=c(rownames(coef(model3)[[1]])),
+                             Intercept=c(coef(model3)[[1]][,1]))
+    SiteCoefs4 <- data.frame(Model = 4,
+                             Group=c(rownames(coef(model4)[[1]])),
+                             Intercept=c(coef(model4)[[1]][,1]))
+    SiteCoefs5 <- data.frame(Model = 5,
+                             Group=c(rownames(coef(model5)[[1]])),
+                             Intercept=c(coef(model5)[[1]][,1]))
+    SiteCoefs6 <- data.frame(Model = 6,
+                             Group=c(rownames(coef(model6)[[1]])),
+                             Intercept=c(coef(model6)[[1]][,1]))
+    SiteCoefs7 <- data.frame(Model = 7,
+                             Group=c(rownames(coef(model7)[[1]])),
+                             Intercept=c(coef(model7)[[1]][,1]))
+    SiteCoefs8 <- data.frame(Model = 8,
+                             Group=c(rownames(coef(model8)[[1]])),
+                             Intercept=c(coef(model8)[[1]][,1]))
+    SiteCoefs <- rbind(SiteCoefs1,SiteCoefs2,SiteCoefs3,SiteCoefs4,SiteCoefs5,SiteCoefs6,SiteCoefs7,SiteCoefs8)
     
-    SiteCoefs1 <- data.frame(Group=c(rownames(coef(model3a)[[1]])),
-                               Intercept=c(coef(model3a)[[1]][,1]))
-    
-    write.csv(SiteCoefs1, row.names = F, file="TableS5_RandomIntercepts.csv")
+    write.csv(SiteCoefs, row.names = F, file="TableS5_RandomIntercepts.csv")
 
 ###### Table S6:Taper values by family #####
 

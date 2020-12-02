@@ -117,22 +117,11 @@
   dev.off()  
 
 
-#### Figure 3: Violin plots for taper and circularity for each site #####
+#### Figure 3: Violin plots for taper for each site #####
+  
     TaperSample <- read.csv("DataFile_TaperParameterSample.csv")
-  
-    CircSample <- read.csv("DataFile_CircSample.csv")
-    
-    load("ForestGEO_CensusData.RData")
-    HomSample <- rbind(AMA.cens[[2]][!duplicated(AMA.cens[[2]]$StemID),], BCI.cens[[6]][!duplicated(BCI.cens[[6]]$StemID),], 
-                    BKT.cens[[1]][!duplicated(BKT.cens[[1]]$StemID),], HKK.cens[[4]][!duplicated(HKK.cens[[4]]$StemID),],
-                    KCH.cens[[3]][!duplicated(KCH.cens[[3]]$StemID),])
-    
     TaperBySite <- read.csv("TaperVariationTable.csv")
-    CircBySite <- read.csv("CircVariationTable.csv")
-    HOM.results <- read.csv("Data file_HOMresultsPerPlot.csv")
-      HOM.results <- HOM.results[order(HOM.results$Site, -HOM.results$Census),]
-      HOM.results <- HOM.results[!duplicated(HOM.results$Site),]
-  
+
     library(ggplot2)
   
       taperPlot <- ggplot(TaperSample, aes(x=Site, y=b1.iso, fill=Site)) + 
@@ -150,54 +139,13 @@
         #geom_point(data=TaperBySite,aes(x=Site, y = Mean.BA), colour="white", shape=15, show.legend=F) +
         geom_point(data=TaperBySite,aes(x=Site, y = Mean.AGB), colour="white", shape=16, show.legend=F)
       
-      circPlot <- ggplot(CircSample, aes(x=Site, y=iso, fill=Site)) + 
-        geom_violin(trim=F) +
-        labs(x="", y = "Tree circularity") +
-        scale_fill_manual(values = as.character(site.cols$col)) +
-        theme_bw() +
-        theme(panel.border = element_rect(colour = "black"), panel.grid.major = element_blank(),
-              panel.grid.minor = element_blank(), axis.line = element_blank(),
-              axis.text.x=element_blank(),
-              axis.title.x=element_blank(),
-              axis.ticks.x=element_blank()) + 
-        #geom_point(data=CircBySite,aes(x=Site, y = Mean), colour="white", shape=17, show.legend=F) + 
-        #geom_point(data=CircBySite,aes(x=Site, y = Mean.BA), colour="white", shape=15, show.legend=F) +
-        geom_point(data=CircBySite,aes(x=Site, y = Mean.AGB), colour="white", shape=16, show.legend=F)
+    pdf(width=4.5, height=3, file="Figure3_TaperViolins.pdf")
       
-    homPlot <- ggplot(HomSample, aes(x=Site, y=hom, fill=Site)) + 
-      geom_violin(trim=T) +
-      scale_y_log10() +
-      labs(x="", y = "HOM (m)") +
-      scale_fill_manual(values = as.character(site.cols$col)) +
-      theme_minimal() +   
-      theme(axis.text.x=element_blank(),
-            axis.title.x=element_blank(),
-            axis.ticks.x=element_blank()) + 
-      #geom_point(data=HOM.results,aes(x=Site, y = MeanHOM), colour="grey", shape=17, show.legend=F) + 
-      #geom_point(data=HOM.results,aes(x=Site, y = MeanHOM.BA), colour="grey", shape=15, show.legend=F) +
-      geom_point(data=HOM.results,aes(x=Site, y = MeanHOM.AGB), colour="grey", shape=16, show.legend=F)
-    
-    
-    pdf(width=4.5, height=5.5, file="Figure3_TrunkTaperCircularityViolins.pdf")
-      
-     par(xpd=F,family="sans", mfrow=c(2,1), las=1, oma=c(1,4,0,3), mar=c(3,4,1,1))  
+     par(xpd=F,family="sans", mfrow=c(1,1), las=1, oma=c(1,4,0,3), mar=c(3,4,1,1))  
      
-     cowplot::plot_grid(taperPlot,circPlot,
-                   labels = c("a","b"),
-                   ncol = 1)
+     taperPlot
      
     dev.off()
-    
-    Circ.Test1 <- kruskal.test(list(CircSample[CircSample$Site=='AMA','iso'],
-                                    CircSample[CircSample$Site=='BCI','iso'],
-                                    CircSample[CircSample$Site=='BKT','iso'],
-                                    CircSample[CircSample$Site=='HKK','iso'],
-                                    CircSample[CircSample$Site=='KCH','iso']))
-    Circ.Test2 <- kruskal.test(list(CircSample[CircSample$Site=='AMA' & CircSample$DBH>=30,'iso'],
-                                    CircSample[CircSample$Site=='BCI' & CircSample$DBH>=30,'iso'],
-                                    CircSample[CircSample$Site=='BKT' & CircSample$DBH>=30,'iso'],
-                                    CircSample[CircSample$Site=='HKK' & CircSample$DBH>=30,'iso'],
-                                    CircSample[CircSample$Site=='KCH' & CircSample$DBH>=30,'iso']))
     
 #### Figure 4: Proportion of stems measured at nonstandard heights over time at each plot ####
   HOM.results <- read.csv("Data file_HOMresultsPerPlot.csv")
@@ -275,10 +223,53 @@
   dev.off()
   
   
-#### Figure 5: Compare biomass estimates from different taper models ####
+#### Figure 5: Violin plots for circularity for each site #####
+
+    CircSample <- read.csv("DataFile_CircSample.csv")
+    
+    CircBySite <- read.csv("CircVariationTable.csv")
+
+    library(ggplot2)
+
+      circPlot <- ggplot(CircSample, aes(x=Site, y=iso, fill=Site)) + 
+        geom_violin(trim=F) +
+        labs(x="", y = "Tree circularity") +
+        scale_fill_manual(values = as.character(site.cols$col)) +
+        theme_bw() +
+        theme(panel.border = element_rect(colour = "black"), panel.grid.major = element_blank(),
+              panel.grid.minor = element_blank(), axis.line = element_blank(),
+              axis.text.x=element_blank(),
+              axis.title.x=element_blank(),
+              axis.ticks.x=element_blank()) + 
+        #geom_point(data=CircBySite,aes(x=Site, y = Mean), colour="white", shape=17, show.legend=F) + 
+        #geom_point(data=CircBySite,aes(x=Site, y = Mean.BA), colour="white", shape=15, show.legend=F) +
+        geom_point(data=CircBySite,aes(x=Site, y = Mean.AGB), colour="white", shape=16, show.legend=F)
+      
+
+    
+    pdf(width=4.5, height=3, file="Figure5_CircularityViolins.pdf")
+      
+     par(xpd=F,family="sans", mfrow=c(1,1), las=1, oma=c(1,4,0,3), mar=c(3,4,1,1))  
+     
+     circPlot
+     
+    dev.off()
+    
+    Circ.Test1 <- kruskal.test(list(CircSample[CircSample$Site=='AMA','iso'],
+                                    CircSample[CircSample$Site=='BCI','iso'],
+                                    CircSample[CircSample$Site=='BKT','iso'],
+                                    CircSample[CircSample$Site=='HKK','iso'],
+                                    CircSample[CircSample$Site=='KCH','iso']))
+    Circ.Test2 <- kruskal.test(list(CircSample[CircSample$Site=='AMA' & CircSample$DBH>=30,'iso'],
+                                    CircSample[CircSample$Site=='BCI' & CircSample$DBH>=30,'iso'],
+                                    CircSample[CircSample$Site=='BKT' & CircSample$DBH>=30,'iso'],
+                                    CircSample[CircSample$Site=='HKK' & CircSample$DBH>=30,'iso'],
+                                    CircSample[CircSample$Site=='KCH' & CircSample$DBH>=30,'iso']))
+    
+#### Figure 6: Compare biomass estimates from different taper models ####
   AGB_Results <- read.csv("DataFile_BiomassEstimates.csv")
   
-  tiff(file="Figure5_BiomassEstimates.tiff",width=6,height=4, units="in", res=400, family = "sans")
+  tiff(file="Figure6_BiomassEstimates.tiff",width=6,height=4, units="in", res=400, family = "sans")
 
     par(mfrow=c(1,1), mar=c(3,3,1,1),oma=c(1,1,1,1), family="sans", xpd=F, las=1)
         
