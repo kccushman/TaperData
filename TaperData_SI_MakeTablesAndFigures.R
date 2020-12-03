@@ -490,7 +490,45 @@
   
   dev.off()
 
-###### Figure S7: Nonstandard measurement heights for trees >= 30 cm ######
+###### Figure S7: Explore errors in AGB results ######
+  
+  AGB_Results <- read.csv("DataFile_BiomassEstimates.csv")    
+      
+  model.full <- lme4::lmer(b1.iso~log(DBH) + log(HOM) + log(WSG) + (1|Site), data = TaperSample)      
+  TaperSample$b.mod <- predict(model.full, newdata = TaperSample)
+  TaperSample$res <- TaperSample$b.mod - TaperSample$b1.iso
+  
+    TaperSample <- TaperSample[order(TaperSample$Site,-TaperSample$DBH),]
+    
+    ModelAvgError <- data.frame(Site = sites,
+                                Error = (AGB_Results$AGB_FullModel_Mean-AGB_Results$AGB_MeasTaper)/AGB_Results$AGB_MeasTaper,
+                                LgTreeBias = NA)
+    for(i in 1:length(sites)){
+      ModelAvgError$LgTreeBias[i] <- mean(head(TaperSample[TaperSample$Site==sites[i],"res"],10))
+    }
+    
+  tiff(width=4, height=4, file="FigureS7_BiasFromLargeTreeError.tiff",res=300,units="in")
+  par(mfrow=c(1,1),mar=c(4,4,1,1),oma = c(0,0,0,0), family="sans")
+    plot(Error~LgTreeBias, data=ModelAvgError,
+         ylab = "Site-level AGB bias",
+         xlab = "Taper model bias in 10 largest trees",
+         pch=20,
+         cex=1.5,
+         col = site.cols$col)
+    
+    legend(x=-0.013, y=0.011, bty='n',
+           sitesNames,
+           col=site.cols$col,
+           cex=1,
+           pch=19)
+    abline(h=0, lty=2)
+    abline(v=0, lty=2)
+  dev.off()  
+
+    model.fam <- lme4::lmer(b1.iso~ (1|Family), data = TaperSample) 
+    MuMIn::r.squaredGLMM(model.fam)
+  
+###### Figure S8: Nonstandard measurement heights for trees >= 30 cm ######
   HOM.results <- read.csv("DataFile_HOMresultsPerPlot30.csv")
   
   axisSize <- 0.9
@@ -559,7 +597,7 @@
     }
   dev.off()
   
-###### Figure S8: Trunk circularity for each tree #####
+###### Figure S9: Trunk circularity for each tree #####
   contours$Tag <- as.character(contours$Tag) 
     
   tiff(width=8, height=6, file="Figure S8_Trunk circularity for individual trees.tiff",res=300,units="in")
@@ -589,7 +627,7 @@
   dev.off()
 
   
-###### Figure S9: HOM variation versus climate and latitude ######
+###### Figure S10: HOM variation versus climate and latitude ######
   
     # Vector of MAP in site alphabetical order
     MAP <- c(3200,2600,2500,1500,2800)
