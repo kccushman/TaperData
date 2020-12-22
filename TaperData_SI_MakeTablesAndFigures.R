@@ -372,6 +372,7 @@
                               paired=T)
   
 ###### Figure S4: Optical dendrometer taper vs. 3-D model taper #####
+  # Note: Must run code at begginning for Figure S3 section first
   
   TaperCompare <- TaperSample[TaperSample$b1.opt>=0 & TaperSample$b1.iso>=0 & !is.na(TaperSample$b1.opt),]
   # Use a Deming regression
@@ -381,11 +382,13 @@
   newx <- seq(min(TaperCompare$b1.iso), max(TaperCompare$b1.iso), length.out=100)
   preds <- mcr::MCResultAnalytical.calcResponse(OptReg, x.levels = newx, alpha=0.05)
   
+  axisLim <- range(c(TaperCompare$b1.iso,TaperCompare$b1.opt))
+  
   tiff(width=5, height=5, file="FigureS4_Optical dendrometer vs 3-D model.tiff",res=300,units="in")
     par(family="sans")
     plot(b1.opt~b1.iso, data=TaperCompare,
-         ylim=c(-0.4,0.4),
-         #ylim=range(TaperCompare$b1.opt)+c(-0.015,0),
+         ylim=axisLim,
+         xlim=axisLim,
          pch=20,
          xlab=NA,
          ylab=NA)
@@ -396,10 +399,10 @@
     mtext("3-D model taper parameter", side=1, line=2)
     mtext("Optical dendrometer taper parameter", side=2, line=2)
      legend(x=0.025, y=-0.1,
-            c("Regression line","95% CI","1-1 line"),
+            c("Regression line","1-1 line"),
             lwd=2,
-            col=c("black","black","red"),
-            lty=c(1,2,2),
+            col=c("black","red"),
+            lty=c(1,2),
             bty='n')
   dev.off()
   
@@ -627,105 +630,3 @@
   dev.off()
 
   
-###### Figure S10: HOM variation versus climate and latitude ######
-  
-    # Vector of MAP in site alphabetical order
-    MAP <- c(3200,2600,2500,1500,2800)
-  # Vector of dry season length in site alphabetical order
-    DSL <- c(0,3,0,5,2.5)
-  # Vector of distance from equator
-    Lat <- c(3.8, 9.2, 1.3, 15.4, 7.5)
-    
-  PropStems <- c(0.5512590, 0.5677175, 0.2314316, 0.1071939, 0.6266549)
-  PropBA <- c(0.6104313, 0.7050572, 0.2970426, 0.1605881,  0.7186443)
-  MeanHOM <- c(2.554515, 3.658446, 1.664472, 1.541162, 3.012815)
-  
-  cexpt=2
-  cexAx = 1.4
-  
-tiff(width=7, height=6.5, file="FigureS9_MeasHtVersusClimate.tiff",res=300,units="in")
-    par(mfrow=c(3,3), family="sans", mar=c(2,2,1,1),oma=c(2,2,1,1))
-    
-    
-  # Proportion of basal area  
-  plot(PropBA~MAP, pch =20,
-       xlab = NA,
-       xaxt="n",
-       ylab = NA,
-       col=site.cols$col, cex=cexpt, cex.axis = cexAx)
-  mtext("Proportion of basal area", side=2, line=2, cex=0.9)
-  text("a", x = 1500, y = 0.7, cex = cexAx)
-  
-      legend(x=1450, y=0.68, bty='n',
-       sitesNames,
-       col=site.cols$col,
-       cex=1.2,
-       pch=19)
-      
-      
-  plot(PropBA~DSL, pch =20,
-       col=site.cols$col,
-       xlab = NA,
-       xaxt="n",
-       yaxt="n",
-       ylab=NA, cex=cexpt, cex.axis = cexAx)
-   text("b", x = 0, y = 0.7, cex = cexAx)
-   
-  plot(PropBA~Lat, pch =20,
-       col=site.cols$col,
-       xlab = NA,
-       xaxt="n",
-       yaxt="n",
-       ylab=NA, cex=cexpt, cex.axis = cexAx)
-   text("c", x = 1.5, y = 0.7, cex = cexAx)
-
-    # Proportion of stems 
-  plot(PropStems~MAP, pch =20,
-       xlab = NA,
-       xaxt="n",
-       ylab = NA,
-       col=site.cols$col, cex=cexpt, cex.axis = cexAx)
-  mtext("Proportion of stems", side=2, line=2, cex=0.9)
-  text("d", x = 1500, y = 0.6, cex = cexAx)
-   
-  plot(PropStems~DSL, pch =20,
-       col=site.cols$col,
-       xlab = NA,
-       xaxt="n",
-       yaxt="n",
-       ylab=NA, cex=cexpt, cex.axis = cexAx)
-  text("e", x = 0, y = 0.6, cex = cexAx) 
-  
-  plot(PropStems~Lat, pch =20,
-       col=site.cols$col,
-       xlab = NA,
-       xaxt="n",
-       yaxt="n",
-       ylab=NA, cex=cexpt, cex.axis = cexAx)
-  text("f", x = 1.5, y = 0.6, cex = cexAx) 
-
-    # Mean HOM 
-  plot(MeanHOM~MAP, pch =20,
-       xlab = NA,
-       ylab = NA,
-       col=site.cols$col, cex=cexpt, cex.axis = cexAx)
-  text("g", x = 1500, y = 3.5, cex = cexAx) 
-  
-  mtext("Mean annual precipitation (mm)", side=1, line=2, cex=0.9)
-  mtext("Mean HOM (m)", side=2, line=2, cex=0.9)
-
-  plot(MeanHOM~DSL, pch =20,
-       col=site.cols$col,
-       xlab = NA,
-       yaxt="n",
-       ylab=NA, cex=cexpt, cex.axis = cexAx)
-  text("h", x = 0, y = 3.5, cex = cexAx)
-  mtext("Dry season length (months)", side=1, line=2, cex=0.9)
-  plot(MeanHOM~Lat, pch =20,
-       col=site.cols$col,
-       xlab = NA,
-       yaxt="n",
-       ylab=NA, cex=cexpt, cex.axis = cexAx)
-  text("i", x = 1.5, y = 3.5, cex = cexAx)
-  mtext("Latitude (degrees from equator)", side=1, line=2, cex=0.9)
-dev.off()
