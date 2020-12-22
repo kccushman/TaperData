@@ -540,7 +540,7 @@
   ptSize <- 0.8
   pchSig <- c(19,19,19,19,19)
   
-  tiff(file="FigureS7_MeasHtChangesOverTime30.tiff",width=3,height=6, units="in", res=300, family = "sans")
+  tiff(file="FigureS8_MeasHtChangesOverTime30.tiff",width=3,height=6, units="in", res=300, family = "sans")
 
     par(mfrow=c(3,1), mar=c(1,6,1,1),oma=c(2,1,0,0), family="sans", xpd=F, las=1)
     
@@ -603,7 +603,7 @@
 ###### Figure S9: Trunk circularity for each tree #####
   contours$Tag <- as.character(contours$Tag) 
     
-  tiff(width=8, height=6, file="Figure S8_Trunk circularity for individual trees.tiff",res=300,units="in")
+  tiff(width=8, height=6, file="Figure S9_Trunk circularity for individual trees.tiff",res=300,units="in")
     par(mfrow=c(2,3), family="serif", mar=c(3,3,1,1),oma=c(2,2,1,1))
     circSites <- unique(CircSample$Site)
     for(i in 1:length(circSites)){
