@@ -232,7 +232,7 @@
     library(ggplot2)
 
       circPlot <- ggplot(CircSample, aes(x=Site, y=iso, fill=Site)) + 
-        geom_violin(trim=F) +
+        geom_violin(trim=T) +
         labs(x="", y = "Tree circularity") +
         scale_fill_manual(values = as.character(site.cols$col)) +
         theme_bw() +
@@ -243,7 +243,8 @@
               axis.ticks.x=element_blank()) + 
         #geom_point(data=CircBySite,aes(x=Site, y = Mean), colour="white", shape=17, show.legend=F) + 
         #geom_point(data=CircBySite,aes(x=Site, y = Mean.BA), colour="white", shape=15, show.legend=F) +
-        geom_point(data=CircBySite,aes(x=Site, y = Mean.AGB), colour="white", shape=16, show.legend=F)
+        geom_point(data=CircBySite,aes(x=Site, y = Mean.AGB), colour="white", shape=16, show.legend=F) +
+        geom_hline(yintercept = 1, linetype="dashed", color= "black")
       
 
     

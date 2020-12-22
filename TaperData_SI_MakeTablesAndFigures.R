@@ -47,39 +47,23 @@
     model7 <- lme4::lmer(b1.iso~log(WSG) + (1|Site), data = TaperSample)
   # Model 8
     model8 <- lme4::lmer(b1.iso~ (1|Site), data = TaperSample)
-  
-    SiteCoefs1 <- data.frame(Model = 1,
-                             Group=c(rownames(coef(model1)[[1]])),
-                             Intercept=c(coef(model1)[[1]][,1]))
-    SiteCoefs2 <- data.frame(Model = 2,
-                             Group=c(rownames(coef(model2)[[1]])),
-                             Intercept=c(coef(model2)[[1]][,1]))
-    SiteCoefs3 <- data.frame(Model = 3,
-                             Group=c(rownames(coef(model3)[[1]])),
-                             Intercept=c(coef(model3)[[1]][,1]))
-    SiteCoefs4 <- data.frame(Model = 4,
-                             Group=c(rownames(coef(model4)[[1]])),
-                             Intercept=c(coef(model4)[[1]][,1]))
-    SiteCoefs5 <- data.frame(Model = 5,
-                             Group=c(rownames(coef(model5)[[1]])),
-                             Intercept=c(coef(model5)[[1]][,1]))
-    SiteCoefs6 <- data.frame(Model = 6,
-                             Group=c(rownames(coef(model6)[[1]])),
-                             Intercept=c(coef(model6)[[1]][,1]))
-    SiteCoefs7 <- data.frame(Model = 7,
-                             Group=c(rownames(coef(model7)[[1]])),
-                             Intercept=c(coef(model7)[[1]][,1]))
-    SiteCoefs8 <- data.frame(Model = 8,
-                             Group=c(rownames(coef(model8)[[1]])),
-                             Intercept=c(coef(model8)[[1]][,1]))
-    SiteCoefs <- rbind(SiteCoefs1,SiteCoefs2,SiteCoefs3,SiteCoefs4,SiteCoefs5,SiteCoefs6,SiteCoefs7,SiteCoefs8)
     
-    write.csv(SiteCoefs, row.names = F, file="TableS5_RandomIntercepts.csv")
+    SiteEffects <- data.frame(Site = c(rownames(coef(model1)[[1]])),
+                              Model1 = c(coef(model1)[[1]][,1])-summary(model1)$coefficients[1,1],
+                              Model2 = c(coef(model2)[[1]][,1])-summary(model2)$coefficients[1,1],
+                              Model3 = c(coef(model3)[[1]][,1])-summary(model3)$coefficients[1,1],
+                              Model4 = c(coef(model4)[[1]][,1])-summary(model4)$coefficients[1,1],
+                              Model5 = c(coef(model5)[[1]][,1])-summary(model5)$coefficients[1,1],
+                              Model6 = c(coef(model6)[[1]][,1])-summary(model6)$coefficients[1,1],
+                              Model7 = c(coef(model7)[[1]][,1])-summary(model7)$coefficients[1,1],
+                              Model8 = c(coef(model8)[[1]][,1])-summary(model8)$coefficients[1,1])
+  
+    write.csv(SiteEffects, row.names = F, file="TableS6_RandomIntercepts.csv")
 
 ###### Table S6:Taper values by family #####
 
   # Are there significant differences among families?
-    summary(aov(b1.iso~Family, TaperSample))
+    kruskal.test(x = TaperSample$b1.iso, g = TaperSample$Family)
     
   # Aggregate - mean Taperularity by family
   FamilyTaper <- aggregate(TaperSample$b1.iso, by=list(TaperSample$Family), FUN="mean")
@@ -116,7 +100,7 @@
   CircSample <- TreeSample[!is.na(TreeSample$iso),]
     
   # Are there significant differences among families?
-    summary(aov(iso~Family, CircSample))
+    kruskal.test(x = CircSample$iso, g = CircSample$Family)
     
   # Aggregate - mean circularity by family
   FamilyCirc <- aggregate(CircSample$iso, by=list(CircSample$Family), FUN="mean")
