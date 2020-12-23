@@ -60,41 +60,6 @@
   
     write.csv(SiteEffects, row.names = F, file="TableS6_RandomIntercepts.csv")
 
-###### Table S6:Taper values by family #####
-
-  # Are there significant differences among families?
-    kruskal.test(x = TaperSample$b1.iso, g = TaperSample$Family)
-    
-  # Aggregate - mean Taperularity by family
-  FamilyTaper <- aggregate(TaperSample$b1.iso, by=list(TaperSample$Family), FUN="mean")
-  # Aggregate - SD Taperularity by family  
-  FamilyTaperSD <- aggregate(TaperSample$b1.iso, by=list(TaperSample$Family), FUN="sd")
-  # Aggregate - total sample size by family  
-  FamilyTaperCount <- aggregate(TaperSample$b1.iso, by=list(TaperSample$Family), FUN="length")
-  
-  # Put results into data frame
-  TaperTable <- data.frame(Family=FamilyTaper$Group.1, 
-                          Taperularity=paste(round(FamilyTaper$x,2)," (",round(FamilyTaperSD$x,2),")", sep=""),
-                          SampleSize=FamilyTaperCount$x,
-                          SampleAMA=NA,
-                          SampleBCI=NA,
-                          SampleBKT=NA,
-                          SampleHKK=NA,
-                          SampleKCH=NA)
-  # Sort by sample size
-  TaperTable <- TaperTable[order(-TaperTable$SampleSize),]
-  
-  # Find the sample size per plot
-  for(i in 1:length(TaperTable$Family)){
-    TaperTable[i,"SampleAMA"] <- length(TaperSample[TaperSample$Family==TaperTable$Family[i] & TaperSample$Site=="AMA","Tag"])
-    TaperTable[i,"SampleBCI"] <- length(TaperSample[TaperSample$Family==TaperTable$Family[i] & TaperSample$Site=="BCI","Tag"])
-    TaperTable[i,"SampleBKT"] <- length(TaperSample[TaperSample$Family==TaperTable$Family[i] & TaperSample$Site=="BKT","Tag"])
-    TaperTable[i,"SampleHKK"] <- length(TaperSample[TaperSample$Family==TaperTable$Family[i] & TaperSample$Site=="HKK","Tag"])
-    TaperTable[i,"SampleKCH"] <- length(TaperSample[TaperSample$Family==TaperTable$Family[i] & TaperSample$Site=="KCH","Tag"])
-  }
-  
-  write.csv(TaperTable, file="TableS6_TaperByFamily.csv", row.names = F)  
-  
 ###### Table S7:Circularity values by family #####
   # Make a data frame with trees with circularity measurement at the HOM
   CircSample <- TreeSample[!is.na(TreeSample$iso),]
@@ -132,7 +97,42 @@
   
   write.csv(CircTable, file="TableS7_Circularity by family.csv", row.names = F)  
   
-###### Table S8: HOM tests by site ######
+###### Table S8:Taper values by family #####
+
+  # Are there significant differences among families?
+    kruskal.test(x = TaperSample$b1.iso, g = TaperSample$Family)
+    
+  # Aggregate - mean Taperularity by family
+  FamilyTaper <- aggregate(TaperSample$b1.iso, by=list(TaperSample$Family), FUN="mean")
+  # Aggregate - SD Taperularity by family  
+  FamilyTaperSD <- aggregate(TaperSample$b1.iso, by=list(TaperSample$Family), FUN="sd")
+  # Aggregate - total sample size by family  
+  FamilyTaperCount <- aggregate(TaperSample$b1.iso, by=list(TaperSample$Family), FUN="length")
+  
+  # Put results into data frame
+  TaperTable <- data.frame(Family=FamilyTaper$Group.1, 
+                          Taperularity=paste(round(FamilyTaper$x,2)," (",round(FamilyTaperSD$x,2),")", sep=""),
+                          SampleSize=FamilyTaperCount$x,
+                          SampleAMA=NA,
+                          SampleBCI=NA,
+                          SampleBKT=NA,
+                          SampleHKK=NA,
+                          SampleKCH=NA)
+  # Sort by sample size
+  TaperTable <- TaperTable[order(-TaperTable$SampleSize),]
+  
+  # Find the sample size per plot
+  for(i in 1:length(TaperTable$Family)){
+    TaperTable[i,"SampleAMA"] <- length(TaperSample[TaperSample$Family==TaperTable$Family[i] & TaperSample$Site=="AMA","Tag"])
+    TaperTable[i,"SampleBCI"] <- length(TaperSample[TaperSample$Family==TaperTable$Family[i] & TaperSample$Site=="BCI","Tag"])
+    TaperTable[i,"SampleBKT"] <- length(TaperSample[TaperSample$Family==TaperTable$Family[i] & TaperSample$Site=="BKT","Tag"])
+    TaperTable[i,"SampleHKK"] <- length(TaperSample[TaperSample$Family==TaperTable$Family[i] & TaperSample$Site=="HKK","Tag"])
+    TaperTable[i,"SampleKCH"] <- length(TaperSample[TaperSample$Family==TaperTable$Family[i] & TaperSample$Site=="KCH","Tag"])
+  }
+  
+  write.csv(TaperTable, file="TableS8_TaperByFamily.csv", row.names = F)  
+  
+###### Table S10: HOM tests by site ######
     HOM.results <- read.csv("Data file_HOMresultsPerPlot.csv")
     load("ForestGEO_CensusData.RData")
     
@@ -189,17 +189,17 @@
                                     KCH.HOM.test$statistic),
                              Pval=c(AMA.HOM.test$p.value, BCI.HOM.test$p.value,HKK.HOM.test$p.value,
                                     KCH.HOM.test$p.value))
-    write.csv(HomTestTable, file="TableS8_MeasHeightsWithinPlots.csv", row.names = F)
+    write.csv(HomTestTable, file="TableS10_MeasHeightsWithinPlots.csv", row.names = F)
 
-###### Table S9: HOM variation by family #####
+###### Table S11: HOM variation by family #####
   RecentHOM <- rbind(AMA.cens[[2]][!duplicated(AMA.cens[[2]]$StemID),c("Family", "Site","hom","dbh")], BCI.cens[[6]][!duplicated(BCI.cens[[6]]$StemID),c("Family", "Site","hom","dbh")], 
                      BKT.cens[[1]][!duplicated(BKT.cens[[1]]$StemID),c("Family", "Site","hom","dbh")], HKK.cens[[4]][!duplicated(HKK.cens[[4]]$StemID),c("Family", "Site","hom","dbh")],
                      KCH.cens[[3]][!duplicated(KCH.cens[[3]]$StemID),c("Family", "Site","hom","dbh")])
   
   RecentHOM[is.na(RecentHOM$Family),"Family"] <- "Unknown"
   
-  summary(aov(hom~Family, data = RecentHOM))
-  
+  kruskal.test(x = RecentHOM$hom, g = RecentHOM$Family)
+
   FamilyHOM <- aggregate(RecentHOM$hom, by=list(RecentHOM$Family), FUN="mean")
   FamilyHOMSD <- aggregate(RecentHOM$hom, by=list(RecentHOM$Family), FUN="sd")
   FamilyHOMCount <- aggregate(RecentHOM$hom, by=list(RecentHOM$Family), FUN="length")
@@ -230,7 +230,7 @@
   HOMTable10 <- HOMTable[HOMTable$SampleSize>=10,]
   
   # Write table to .csv
-  write.csv(HOMTable10, file="TableS9_MeasHtByFamily.csv", row.names = F)
+  write.csv(HOMTable10, file="TableS11_MeasHtByFamily.csv", row.names = F)
 
 ###### Figure S1: Taper parameter variation with height #####
   range.lm <- lm(b1.iso~range.iso, data=TaperSample)
@@ -262,11 +262,11 @@
 ###### Figure S2: Taper parameter variation including measurements below the HOM ##### 
   IsoCompare <- TaperSample[TaperSample$range.hom>= 1.4 & !(TaperSample$range.hom==TaperSample$range.iso),]
   # Use a Deming regression
-    IsoReg=mcreg(IsoCompare$b1.iso,IsoCompare$b1.hom,method.reg="Deming",error.ratio=1,method.ci="analytical")
-    getCoefficients(IsoReg)
+    IsoReg=mcr::mcreg(IsoCompare$b1.iso,IsoCompare$b1.hom,method.reg="Deming",error.ratio=1,method.ci="analytical")
+    mcr::getCoefficients(IsoReg)
     
     newx <- seq(min(IsoCompare$b1.iso), max(IsoCompare$b1.iso), length.out=100)
-    preds <- MCResultAnalytical.calcResponse(IsoReg, x.levels = newx, alpha=0.05)
+    preds <- mcr::MCResultAnalytical.calcResponse(IsoReg, x.levels = newx, alpha=0.05)
     
   tiff(width=5, height=5, file="Figure S2_Taper variation below HOM.tiff",res=300,units="in")
     par(family="serif")
@@ -274,7 +274,7 @@
          pch=20,
          xlab=NA,
          ylab=NA)
-    abline(a=getCoefficients(IsoReg)[1,1],b=getCoefficients(IsoReg)[2,1],lwd=2)
+    abline(a=mcr::getCoefficients(IsoReg)[1,1],b=mcr::getCoefficients(IsoReg)[2,1],lwd=2)
     lines(x=preds[,1],y=preds[,4],lwd=2,lty=2)
     lines(x=preds[,1],y=preds[,5],lwd=2,lty=2)
     abline(a=0,b=1,col="red",lwd=2,lty=2)
@@ -368,7 +368,7 @@
   
   axisLim <- range(c(TaperCompare$b1.iso,TaperCompare$b1.opt))
   
-  tiff(width=5, height=5, file="FigureS4_Optical dendrometer vs 3-D model.tiff",res=300,units="in")
+  tiff(width=5, height=5, file="Figure S4_Optical dendrometer vs 3-D model.tiff",res=300,units="in")
     par(family="sans")
     plot(b1.opt~b1.iso, data=TaperCompare,
          ylim=axisLim,
@@ -434,7 +434,7 @@
   # Read in data file for taper parameter sample and define the taper model used in the biomass estimation routine
   model3a <- lme4::lmer(b1.iso~log(DBH) + log(HOM) + log(WSG) + (1|Site), data = TaperSample)
 
-  tiff(width=6, height=4, file="FigureS6_DistributionOfModelResiduals.tiff",res=300,units="in")
+  tiff(width=6, height=4, file="Figure S6_DistributionOfModelResiduals.tiff",res=300,units="in")
   par(mfrow=c(2,2),mar=c(4,3,1,1),oma = c(0,3,0,0), family="sans")
   
   # NO family fixed effects
@@ -494,7 +494,7 @@
       ModelAvgError$LgTreeBias[i] <- mean(head(TaperSample[TaperSample$Site==sites[i],"res"],10))
     }
     
-  tiff(width=4, height=4, file="FigureS7_BiasFromLargeTreeError.tiff",res=300,units="in")
+  tiff(width=4, height=4, file="Figure S7_BiasFromLargeTreeError.tiff",res=300,units="in")
   par(mfrow=c(1,1),mar=c(4,4,1,1),oma = c(0,0,0,0), family="sans")
     plot(Error~LgTreeBias, data=ModelAvgError,
          ylab = "Site-level AGB bias",
@@ -524,7 +524,7 @@
   ptSize <- 0.8
   pchSig <- c(19,19,19,19,19)
   
-  tiff(file="FigureS8_MeasHtChangesOverTime30.tiff",width=3,height=6, units="in", res=300, family = "sans")
+  tiff(file="Figure S8_MeasHtChangesOverTime30.tiff",width=3,height=6, units="in", res=300, family = "sans")
 
     par(mfrow=c(3,1), mar=c(1,6,1,1),oma=c(2,1,0,0), family="sans", xpd=F, las=1)
     
@@ -585,8 +585,10 @@
   dev.off()
   
 ###### Figure S9: Trunk circularity for each tree #####
-  contours$Tag <- as.character(contours$Tag) 
-    
+  contours$Tag <- as.character(contours$Tag)
+  CircSample$Tag <- as.character(CircSample$Tag)
+  TreeSample$Tag <- as.character(TreeSample$Tag)
+  
   tiff(width=8, height=6, file="Figure S9_Trunk circularity for individual trees.tiff",res=300,units="in")
     par(mfrow=c(2,3), family="serif", mar=c(3,3,1,1),oma=c(2,2,1,1))
     circSites <- unique(CircSample$Site)

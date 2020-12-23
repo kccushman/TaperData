@@ -689,7 +689,7 @@ sitesNames <- c("Amacayacu",
     residualANOVA <- lm(residual~site, data=ModelResiduals)
     summary(residualANOVA)
 
-#### Revision edit: Make table with taper by site ####
+#### Revision edit: Make Table 3 with taper by site ####
   
   # Calculate EDBH, basal area, and AGB for each tree
     agb.allometry <- function(E,wsg,dbh) {exp(-1.803-0.976*E+0.976*log(wsg)
@@ -738,7 +738,7 @@ sitesNames <- c("Amacayacu",
     
     write.csv(TaperBySite, file="TaperVariationTable.csv")
       
-#### Revision edit: Make table with circularity by site ####    
+#### Revision edit: Make Table S6 with circularity by site ####    
 # Calculate EDBH, basal area, and AGB for each tree
     agb.allometry <- function(E,wsg,dbh) {exp(-1.803-0.976*E+0.976*log(wsg)
                                               + 2.673*log(dbh) - 0.0299*(log(dbh)^2))}
@@ -846,7 +846,7 @@ sitesNames <- c("Amacayacu",
 
 
     
-#### Revision edit: Estimate AGB with various models ####
+#### Revision edit: Estimate AGB with various models and save Table S12 ####
         
   # Define necessary functions
     agb.allometry <- function(E,wsg,dbh) {exp(-1.803-0.976*E+0.976*log(wsg)

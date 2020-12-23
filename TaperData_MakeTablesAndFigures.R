@@ -19,7 +19,67 @@
   
   site.cols$col <- as.character(site.cols$col)
 
-#### Figure 2 : Variation of taper parameter with tree qualities ####
+#### Figure 2: Violin plots for circularity and taper for each site #####
+    CircSample <- read.csv("DataFile_CircSample.csv")
+    CircBySite <- read.csv("CircVariationTable.csv")
+    
+    TaperSample <- read.csv("DataFile_TaperParameterSample.csv")
+    TaperBySite <- read.csv("TaperVariationTable.csv")
+    
+    library(ggplot2)
+
+      circPlot <- ggplot(CircSample, aes(x=Site, y=iso, fill=Site)) + 
+        geom_violin(trim=T) +
+        labs(x="", y = "Tree circularity") +
+        scale_fill_manual(values = as.character(site.cols$col)) +
+        theme_bw() +
+        theme(panel.border = element_rect(colour = "black"), panel.grid.major = element_blank(),
+              panel.grid.minor = element_blank(), axis.line = element_blank(),
+              axis.text.x=element_blank(),
+              axis.title.x=element_blank(),
+              axis.ticks.x=element_blank()) + 
+        #geom_point(data=CircBySite,aes(x=Site, y = Mean), colour="white", shape=17, show.legend=F) + 
+        #geom_point(data=CircBySite,aes(x=Site, y = Mean.BA), colour="white", shape=15, show.legend=F) +
+        geom_point(data=CircBySite,aes(x=Site, y = Mean.AGB), colour="white", shape=16, show.legend=F) +
+        geom_hline(yintercept = 1, linetype="dashed", color= "black")
+
+      taperPlot <- ggplot(TaperSample, aes(x=Site, y=b1.iso, fill=Site)) + 
+        geom_violin(trim=F) +
+        labs(x="", y = "Tree taper parameter (b)") +
+        scale_fill_manual(values = as.character(site.cols$col)) +
+        scale_y_continuous(breaks=seq(-0.05,0.15,0.05)) +
+        theme_bw() +
+        theme(panel.border = element_rect(colour = "black"), panel.grid.major = element_blank(),
+              panel.grid.minor = element_blank(), axis.line = element_blank(),
+              axis.text.x=element_blank(),
+              axis.title.x=element_blank(),
+              axis.ticks.x=element_blank()) + 
+        #geom_point(data=TaperBySite,aes(x=Site, y = Mean), colour="white", shape=17, show.legend=F) + 
+        #geom_point(data=TaperBySite,aes(x=Site, y = Mean.BA), colour="white", shape=15, show.legend=F) +
+        geom_point(data=TaperBySite,aes(x=Site, y = Mean.AGB), colour="white", shape=16, show.legend=F)
+      
+    pdf(width=4.5, height=5, file="Figure2_CircularityTaperViolins.pdf")
+      
+     par(xpd=F,family="sans", mfrow=c(1,1), las=1, oma=c(1,4,0,3), mar=c(3,4,1,1))  
+     
+     cowplot::plot_grid(circPlot,taperPlot,
+                   labels = c("a","b"),
+                   ncol = 1)
+     
+    dev.off()
+    
+    Circ.Test1 <- kruskal.test(list(CircSample[CircSample$Site=='AMA','iso'],
+                                    CircSample[CircSample$Site=='BCI','iso'],
+                                    CircSample[CircSample$Site=='BKT','iso'],
+                                    CircSample[CircSample$Site=='HKK','iso'],
+                                    CircSample[CircSample$Site=='KCH','iso']))
+    Circ.Test2 <- kruskal.test(list(CircSample[CircSample$Site=='AMA' & CircSample$DBH>=30,'iso'],
+                                    CircSample[CircSample$Site=='BCI' & CircSample$DBH>=30,'iso'],
+                                    CircSample[CircSample$Site=='BKT' & CircSample$DBH>=30,'iso'],
+                                    CircSample[CircSample$Site=='HKK' & CircSample$DBH>=30,'iso'],
+                                    CircSample[CircSample$Site=='KCH' & CircSample$DBH>=30,'iso']))
+      
+#### Figure 3: Variation of taper parameter with tree qualities ####
   TaperSample <- read.csv("DataFile_TaperParameterSample.csv")
 
   cexAx <- 1.2
@@ -28,7 +88,7 @@
   
   model3a <- lme4::lmer(b1.iso~log(DBH) + log(HOM) + log(WSG) + (1|Site), data = TaperSample)
 
-  tiff(file="Figure2_TaperParameterVariation.tiff", height=3, width=8, units="in", res=300)
+  tiff(file="Figure3_TaperParameterVariation.tiff", height=3, width=8, units="in", res=300)
     par(mfrow=c(1,3), mar=c(4,2,0,0), xpd=F,family="sans", las=1, oma=c(0,5,1,1))
 
     plot(b1.iso~DBH, data=TaperSample, type='n',
@@ -116,161 +176,10 @@
     
   dev.off()  
 
-
-#### Figure 3: Violin plots for taper for each site #####
-  
-    TaperSample <- read.csv("DataFile_TaperParameterSample.csv")
-    TaperBySite <- read.csv("TaperVariationTable.csv")
-
-    library(ggplot2)
-  
-      taperPlot <- ggplot(TaperSample, aes(x=Site, y=b1.iso, fill=Site)) + 
-        geom_violin(trim=F) +
-        labs(x="", y = "Tree taper parameter (b)") +
-        scale_fill_manual(values = as.character(site.cols$col)) +
-        scale_y_continuous(breaks=seq(-0.05,0.15,0.05)) +
-        theme_bw() +
-        theme(panel.border = element_rect(colour = "black"), panel.grid.major = element_blank(),
-              panel.grid.minor = element_blank(), axis.line = element_blank(),
-              axis.text.x=element_blank(),
-              axis.title.x=element_blank(),
-              axis.ticks.x=element_blank()) + 
-        #geom_point(data=TaperBySite,aes(x=Site, y = Mean), colour="white", shape=17, show.legend=F) + 
-        #geom_point(data=TaperBySite,aes(x=Site, y = Mean.BA), colour="white", shape=15, show.legend=F) +
-        geom_point(data=TaperBySite,aes(x=Site, y = Mean.AGB), colour="white", shape=16, show.legend=F)
-      
-    pdf(width=4.5, height=3, file="Figure3_TaperViolins.pdf")
-      
-     par(xpd=F,family="sans", mfrow=c(1,1), las=1, oma=c(1,4,0,3), mar=c(3,4,1,1))  
-     
-     taperPlot
-     
-    dev.off()
-    
-#### Figure 4: Proportion of stems measured at nonstandard heights over time at each plot ####
-  HOM.results <- read.csv("Data file_HOMresultsPerPlot.csv")
-  
-  axisSize <- 0.9
-  cexAx <- 1.1
-  textCex <- 1
-  ptSize <- 0.8
-  pchSig <- c(19,19,19,19,19)
-  
-  tiff(file="Figure4_MeasHtChangesOverTime.tiff",width=3,height=6, units="in", res=300, family = "sans")
-
-    par(mfrow=c(3,1), mar=c(1,3,1,1),oma=c(2,1,0,0), family="sans", xpd=F, las=1)
-    
-    plot(x=HOM.results$Year, y=HOM.results$Prop*100,
-         type='n',
-         ylab=NA,ylim=c(0,100),
-         xlab=NA,
-         xaxt = "n",
-         cex.axis=cexAx)
-    par(las=0)
-    mtext("Stems (%)", side=2, line=2.5, cex=axisSize)
-    par(las=1)
-    text(x=1990.5,y=97,"a", cex=textCex+0.3)
-    
-    for(i in 1:length(sites)){
-        points(x=HOM.results[HOM.results$Site==sites[i],"Year"],
-               y=HOM.results[HOM.results$Site==sites[i],"Prop"]*100, 
-               pch=pchSig[i], col=site.cols[site.cols$site==sites[i],"col"], cex=ptSize)
-        lines(x=HOM.results[HOM.results$Site==sites[i],"Year"],
-              y=HOM.results[HOM.results$Site==sites[i],"Prop"]*100, col=site.cols[site.cols$site==sites[i],"col"], lty=1)
-    }
-    
-    legend(x=2004, y=105, bty='n',
-       sitesNames,
-       col=site.cols$col,
-       cex=cexAx-0.3,
-       pch=19)
-    
-    plot(x=HOM.results$Year, y=HOM.results$PropBA*100,
-         type='n',
-         ylab=NA,ylim=c(0,100),
-         xlab=NA,
-         xaxt = "n",
-         cex.axis=cexAx)
-    par(las=0)
-    mtext("Basal area (%)", side=2, line=2.5, cex=axisSize)
-    par(las=1)
-    text(x=1990.5,y=97,"b", cex=textCex+0.3)
-    for(i in 1:length(sites)){
-        points(x=HOM.results[HOM.results$Site==sites[i],"Year"],
-               y=HOM.results[HOM.results$Site==sites[i],"PropBA"]*100, 
-               pch=pchSig[i], col=site.cols[site.cols$site==sites[i],"col"], cex=ptSize)
-        lines(x=HOM.results[HOM.results$Site==sites[i],"Year"],
-              y=HOM.results[HOM.results$Site==sites[i],"PropBA"]*100, col=site.cols[site.cols$site==sites[i],"col"], lty=1)
-    }
-    
-    plot(x=HOM.results$Year,y=HOM.results$MeanHOM.AGB,
-         type='n',
-         ylab=NA,
-         xlab=NA,
-         cex.axis=cexAx)
-    mtext("Census year", side=1, line=2, cex=axisSize)
-    par(las=0)
-    mtext("Average HOM (m)", side=2, line=2.5, cex=axisSize)
-    par(las=1)
-    text(x=1990.5,y=3.14,"c", cex=textCex+0.3)
-    for(i in 1:length(sites)){
-        points(x=HOM.results[HOM.results$Site==sites[i],"Year"],
-               y=HOM.results[HOM.results$Site==sites[i],"MeanHOM.AGB"], 
-               pch=pchSig[i], col=site.cols[site.cols$site==sites[i],"col"], cex=ptSize)
-        lines(x=HOM.results[HOM.results$Site==sites[i],"Year"],
-              y=HOM.results[HOM.results$Site==sites[i],"MeanHOM.AGB"], col=site.cols[site.cols$site==sites[i],"col"], lty=1)
-    }
-  dev.off()
-  
-  
-#### Figure 5: Violin plots for circularity for each site #####
-
-    CircSample <- read.csv("DataFile_CircSample.csv")
-    
-    CircBySite <- read.csv("CircVariationTable.csv")
-
-    library(ggplot2)
-
-      circPlot <- ggplot(CircSample, aes(x=Site, y=iso, fill=Site)) + 
-        geom_violin(trim=T) +
-        labs(x="", y = "Tree circularity") +
-        scale_fill_manual(values = as.character(site.cols$col)) +
-        theme_bw() +
-        theme(panel.border = element_rect(colour = "black"), panel.grid.major = element_blank(),
-              panel.grid.minor = element_blank(), axis.line = element_blank(),
-              axis.text.x=element_blank(),
-              axis.title.x=element_blank(),
-              axis.ticks.x=element_blank()) + 
-        #geom_point(data=CircBySite,aes(x=Site, y = Mean), colour="white", shape=17, show.legend=F) + 
-        #geom_point(data=CircBySite,aes(x=Site, y = Mean.BA), colour="white", shape=15, show.legend=F) +
-        geom_point(data=CircBySite,aes(x=Site, y = Mean.AGB), colour="white", shape=16, show.legend=F) +
-        geom_hline(yintercept = 1, linetype="dashed", color= "black")
-      
-
-    
-    pdf(width=4.5, height=3, file="Figure5_CircularityViolins.pdf")
-      
-     par(xpd=F,family="sans", mfrow=c(1,1), las=1, oma=c(1,4,0,3), mar=c(3,4,1,1))  
-     
-     circPlot
-     
-    dev.off()
-    
-    Circ.Test1 <- kruskal.test(list(CircSample[CircSample$Site=='AMA','iso'],
-                                    CircSample[CircSample$Site=='BCI','iso'],
-                                    CircSample[CircSample$Site=='BKT','iso'],
-                                    CircSample[CircSample$Site=='HKK','iso'],
-                                    CircSample[CircSample$Site=='KCH','iso']))
-    Circ.Test2 <- kruskal.test(list(CircSample[CircSample$Site=='AMA' & CircSample$DBH>=30,'iso'],
-                                    CircSample[CircSample$Site=='BCI' & CircSample$DBH>=30,'iso'],
-                                    CircSample[CircSample$Site=='BKT' & CircSample$DBH>=30,'iso'],
-                                    CircSample[CircSample$Site=='HKK' & CircSample$DBH>=30,'iso'],
-                                    CircSample[CircSample$Site=='KCH' & CircSample$DBH>=30,'iso']))
-    
-#### Figure 6: Compare biomass estimates from different taper models ####
+#### Figure 4: Compare biomass estimates from different taper models ####
   AGB_Results <- read.csv("DataFile_BiomassEstimates.csv")
   
-  tiff(file="Figure6_BiomassEstimates.tiff",width=6,height=4, units="in", res=400, family = "sans")
+  tiff(file="Figure4_BiomassEstimates.tiff",width=6,height=4, units="in", res=400, family = "sans")
 
     par(mfrow=c(1,1), mar=c(3,3,1,1),oma=c(1,1,1,1), family="sans", xpd=F, las=1)
         
@@ -339,3 +248,79 @@
     mtext("Relative AGB", side=2,line = 3)
     
   dev.off()
+#### Figure 5: Proportion of stems measured at nonstandard heights over time at each plot ####
+  HOM.results <- read.csv("Data file_HOMresultsPerPlot.csv")
+  
+  axisSize <- 0.9
+  cexAx <- 1.1
+  textCex <- 1
+  ptSize <- 0.8
+  pchSig <- c(19,19,19,19,19)
+  
+  tiff(file="Figure5_MeasHtChangesOverTime.tiff",width=3,height=6, units="in", res=300, family = "sans")
+
+    par(mfrow=c(3,1), mar=c(1,3,1,1),oma=c(2,1,0,0), family="sans", xpd=F, las=1)
+    
+    plot(x=HOM.results$Year, y=HOM.results$Prop*100,
+         type='n',
+         ylab=NA,ylim=c(0,100),
+         xlab=NA,
+         xaxt = "n",
+         cex.axis=cexAx)
+    par(las=0)
+    mtext("Stems (%)", side=2, line=2.5, cex=axisSize)
+    par(las=1)
+    text(x=1990.5,y=97,"a", cex=textCex+0.3)
+    
+    for(i in 1:length(sites)){
+        points(x=HOM.results[HOM.results$Site==sites[i],"Year"],
+               y=HOM.results[HOM.results$Site==sites[i],"Prop"]*100, 
+               pch=pchSig[i], col=site.cols[site.cols$site==sites[i],"col"], cex=ptSize)
+        lines(x=HOM.results[HOM.results$Site==sites[i],"Year"],
+              y=HOM.results[HOM.results$Site==sites[i],"Prop"]*100, col=site.cols[site.cols$site==sites[i],"col"], lty=1)
+    }
+    
+    legend(x=2004, y=105, bty='n',
+       sitesNames,
+       col=site.cols$col,
+       cex=cexAx-0.3,
+       pch=19)
+    
+    plot(x=HOM.results$Year, y=HOM.results$PropBA*100,
+         type='n',
+         ylab=NA,ylim=c(0,100),
+         xlab=NA,
+         xaxt = "n",
+         cex.axis=cexAx)
+    par(las=0)
+    mtext("Basal area (%)", side=2, line=2.5, cex=axisSize)
+    par(las=1)
+    text(x=1990.5,y=97,"b", cex=textCex+0.3)
+    for(i in 1:length(sites)){
+        points(x=HOM.results[HOM.results$Site==sites[i],"Year"],
+               y=HOM.results[HOM.results$Site==sites[i],"PropBA"]*100, 
+               pch=pchSig[i], col=site.cols[site.cols$site==sites[i],"col"], cex=ptSize)
+        lines(x=HOM.results[HOM.results$Site==sites[i],"Year"],
+              y=HOM.results[HOM.results$Site==sites[i],"PropBA"]*100, col=site.cols[site.cols$site==sites[i],"col"], lty=1)
+    }
+    
+    plot(x=HOM.results$Year,y=HOM.results$MeanHOM.AGB,
+         type='n',
+         ylab=NA,
+         xlab=NA,
+         cex.axis=cexAx)
+    mtext("Census year", side=1, line=2, cex=axisSize)
+    par(las=0)
+    mtext("Average HOM (m)", side=2, line=2.5, cex=axisSize)
+    par(las=1)
+    text(x=1990.5,y=3.14,"c", cex=textCex+0.3)
+    for(i in 1:length(sites)){
+        points(x=HOM.results[HOM.results$Site==sites[i],"Year"],
+               y=HOM.results[HOM.results$Site==sites[i],"MeanHOM.AGB"], 
+               pch=pchSig[i], col=site.cols[site.cols$site==sites[i],"col"], cex=ptSize)
+        lines(x=HOM.results[HOM.results$Site==sites[i],"Year"],
+              y=HOM.results[HOM.results$Site==sites[i],"MeanHOM.AGB"], col=site.cols[site.cols$site==sites[i],"col"], lty=1)
+    }
+  dev.off()
+  
+  
