@@ -1,4 +1,4 @@
-# Use 'groundhog' packagento use versions of packages at time of publication
+# Use 'groundhog' package to use versions of packages at time of publication
   groundhog::groundhog.library("splancs","2020-12-20")
 
 # Define site abbreviations and names
