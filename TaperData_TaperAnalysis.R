@@ -1,655 +1,45 @@
-## NOTE: if working from the current Git repository, then workflow will function from step 2.
-TaperSample <- read.csv("DataFile_TaperParameterSample.csv")
-sites <- c("AMA","BCI","BKT","HKK","KCH")
-sitesNames <- c("Amacayacu",
-                "Barro Colorado",
-                "Bukit Timah",
-                "Huai Kha Khaeng",
-                "Khao Chong")
+# Use 'groundhog' package to use versions of packages at time of publication
+  groundhog::groundhog.library(c("lme4","MuMIn"),"2020-12-20")
 
-# Load needed packages ### left for refernce; replaced with package::function notation throughout. 
-  # library(splancs)
-  # library(MASS)
-  # library(lme4)
-  # library(MuMIn)
-
-# Load data about sampled trees
-  TreeSample <- read.csv("~/Desktop/Taper/Current/TaperCorrection/TreeTaperSample.csv")
-  TreeSample$ID <- paste(TreeSample$Site, TreeSample$Tag, sep="-")
-
-##### 1. Calculate area, diameter, and circularity of all-cross sections #####  
+# Read data file of calculated taper values
+  TaperSample <- read.csv("DataFiles/DataFile_TaperParameterSample.csv")
   
-  # Define function to calculate perimeter of polygon
-      calc.perim = function(vertices) {
-        dist.sum = sqrt((vertices[1,1]-vertices[length(vertices[,1]),1])^2 + (vertices[1,2]-vertices[length(vertices[,2]),2])^2)
-        for (k in 2:length(vertices[,1])) {
-          dist.k = sqrt((vertices[k,1]-vertices[k-1,1])^2 + (vertices[k,2]-vertices[k-1,2])^2)
-          dist.sum = dist.sum + dist.k
-        }
-        return(dist.sum)
-      }  
-    
-  # Create data frame structure to store contour results
-      contours=data.frame(Tag=NA,
-                          Site=NA,
-                          ht=NA,
-                          perim=NA,
-                          area=NA,
-                          d=NA,
-                          iso.quo=NA)
-#### 1.1 Amacayacu ####
-
-    # List all trees for AMA
-      AMA.trees <- list.files("~/Desktop/Taper/Current/TaperCorrection//RawTaperData/AMA/contours",
-                              full.names = F, no..=F)
-      AMA.files <- list.files("~/Desktop/Taper/Current/TaperCorrection//RawTaperData/AMA/contours",
-                              full.names = T, no..=F)
-      
-    # For each tree, read in all cross-section point files
-      for(i in 1:length(AMA.trees)){
-        # Count numner of cross-sections for this tree
-          n=length(list.files(AMA.files[i]))
-        # Make a data frame to save results
-          tree.data=data.frame(Tag=rep(AMA.trees[i],n),
-                               Site=rep("AMA",n),
-                               ht=NA,
-                               perim=NA,
-                               area=NA,
-                               d=NA,
-                               iso.quo=NA)
-        # For each cross-section calculate height, perimeter, area, diameter
-          for(j in 1:n){
-            # Read in text file to make a table of all points in cross-section. Columns are X,Y,and Z-values of points. 
-              vertices=read.table(paste(AMA.files[i],
-                                        '/c',
-                                        j,
-                                        '.txt',
-                                        sep=''),header=T)
-            # Calculate height of cross-section
-              tree.data$ht[j]=mean(vertices[,3])
-            # Calculate area of cross-section  
-              tree.data$area[j]=splancs::areapl(cbind(vertices[,1],vertices[,2]))
-            # Calculate perimeter of cross-section  
-              tree.data$perim[j] = calc.perim(vertices)	
-            # Find convex hull
-              tree.chull <- chull(vertices[,1:2])
-              # Calculate area from convex hull
-                perim.chull <- calc.perim(vertices[tree.chull,])
-              # Estimate diameter from convex hull area
-                tree.data$d[j] <- perim.chull/pi
-          }
-          
-        # For all cross-sections, calculate circularity (iso.quo)
-          tree.data$iso.quo = (4*pi*tree.data$area)/((tree.data$perim)^2)
-          
-        # Save info
-          contours <- rbind(contours,tree.data)
-      }
-      contours <- contours[-1,] # get rid of first NA line
-      
-#### 1.2 Barro Coloardo ####
-      # List all trees for BCI
-      BCI.trees <- list.files("~/Desktop/Taper/Current/TaperCorrection//RawTaperData/BCI/contours",
-                              full.names = F, no..=F)
-      BCI.files <- list.files("~/Desktop/Taper/Current/TaperCorrection//RawTaperData/BCI/contours",
-                              full.names = T, no..=F)
-      
-      # For each tree, read in all cross-section point files
-      for(i in 1:length(BCI.trees)){
-        # Count numner of cross-sections for this tree
-        n=length(list.files(BCI.files[i]))
-        # Make a data frame to save results
-        tree.data=data.frame(Tag=rep(BCI.trees[i],n),
-                             Site=rep("BCI",n),
-                             ht=NA,
-                             perim=NA,
-                             area=NA,
-                             d=NA,
-                             iso.quo=NA)
-        # For each cross-section calculate height, perimeter, area, diameter
-        for(j in 1:n){
-          # Read in text file to make a table of all points in cross-section. Columns are X,Y,and Z-values of points. 
-          vertices=read.table(paste(BCI.files[i],
-                                    '/c',
-                                    j,
-                                    '.txt',
-                                    sep=''),header=T)
-          # Calculate height of cross-section
-          tree.data$ht[j]=mean(vertices[,3])
-          # Calculate area of cross-section  
-          tree.data$area[j]=splancs::areapl(cbind(vertices[,1],vertices[,2]))
-          # Calculate perimeter of cross-section  
-          tree.data$perim[j] = calc.perim(vertices)	
-          # Find convex hull
-          tree.chull <- chull(vertices[,1:2])
-          # Calculate area from convex hull
-          perim.chull <- calc.perim(vertices[tree.chull,])
-          # Estimate diameter from convex hull area
-          tree.data$d[j] <- perim.chull/pi
-        }
-        
-        # For all cross-sections, calculate circularity (iso.quo)
-        tree.data$iso.quo = (4*pi*tree.data$area)/((tree.data$perim)^2)
-        
-        # Save info
-        contours <- rbind(contours,tree.data)
-      }    
-  
-  
-#### 1.3 Bukit Timah ####
-
-      # List all trees for BKT
-      BKT.trees <- list.files("~/Desktop/Taper/Current/TaperCorrection//RawTaperData/BKT/contours",
-                              full.names = F, no..=F)
-      BKT.files <- list.files("~/Desktop/Taper/Current/TaperCorrection//RawTaperData/BKT/contours",
-                              full.names = T, no..=F)
-      
-      # For each tree, read in all cross-section point files
-      for(i in 1:length(BKT.trees)){
-        # Count numner of cross-sections for this tree
-        n=length(list.files(BKT.files[i]))
-        # Make a data frame to save results
-        tree.data=data.frame(Tag=rep(BKT.trees[i],n),
-                             Site=rep("BKT",n),
-                             ht=NA,
-                             perim=NA,
-                             area=NA,
-                             d=NA,
-                             iso.quo=NA)
-        # For each cross-section calculate height, perimeter, area, diameter
-        for(j in 1:n){
-          # Read in text file to make a table of all points in cross-section. Columns are X,Y,and Z-values of points. 
-          vertices=read.table(paste(BKT.files[i],
-                                    '/c',
-                                    j,
-                                    '.txt',
-                                    sep=''),header=T)
-          # Calculate height of cross-section
-          tree.data$ht[j]=mean(vertices[,3])
-          # Calculate area of cross-section  
-          tree.data$area[j]=splancs::areapl(cbind(vertices[,1],vertices[,2]))
-          # Calculate perimeter of cross-section  
-          tree.data$perim[j] = calc.perim(vertices)	
-          # Find convex hull
-          tree.chull <- chull(vertices[,1:2])
-          # Calculate area from convex hull
-          perim.chull <- calc.perim(vertices[tree.chull,])
-          # Estimate diameter from convex hull area
-          tree.data$d[j] <- perim.chull/pi
-        }
-        
-        # For all cross-sections, calculate circularity (iso.quo)
-        tree.data$iso.quo = (4*pi*tree.data$area)/((tree.data$perim)^2)
-        
-        # Save info
-        contours <- rbind(contours,tree.data)
-      }    
-      
-      
-#### 1.4 Huai Kha Khaeng ####
-
-      # List all trees for HKK
-      HKK.trees <- list.files("~/Desktop/Taper/Current/TaperCorrection//RawTaperData/HKK/contours",
-                              full.names = F, no..=F)
-      HKK.files <- list.files("~/Desktop/Taper/Current/TaperCorrection//RawTaperData/HKK/contours",
-                              full.names = T, no..=F)
-      
-      # For each tree, read in all cross-section point files
-      for(i in 1:length(HKK.trees)){
-        # Count numner of cross-sections for this tree
-        n=length(list.files(HKK.files[i]))
-        # Make a data frame to save results
-        tree.data=data.frame(Tag=rep(HKK.trees[i],n),
-                             Site=rep("HKK",n),
-                             ht=NA,
-                             perim=NA,
-                             area=NA,
-                             d=NA,
-                             iso.quo=NA)
-        # For each cross-section calculate height, perimeter, area, diameter
-        for(j in 1:n){
-          # Read in text file to make a table of all points in cross-section. Columns are X,Y,and Z-values of points. 
-          vertices=read.table(paste(HKK.files[i],
-                                    '/c',
-                                    j,
-                                    '.txt',
-                                    sep=''),header=T)
-          # Calculate height of cross-section
-          tree.data$ht[j]=mean(vertices[,3])
-          # Calculate area of cross-section  
-          tree.data$area[j]=splancs::areapl(cbind(vertices[,1],vertices[,2]))
-          # Calculate perimeter of cross-section  
-          tree.data$perim[j] = calc.perim(vertices)	
-          # Find convex hull
-          tree.chull <- chull(vertices[,1:2])
-          # Calculate area from convex hull
-          perim.chull <- calc.perim(vertices[tree.chull,])
-          # Estimate diameter from convex hull area
-          tree.data$d[j] <- perim.chull/pi
-        }
-        
-        # For all cross-sections, calculate circularity (iso.quo)
-        tree.data$iso.quo = (4*pi*tree.data$area)/((tree.data$perim)^2)
-        
-        # Save info
-        contours <- rbind(contours,tree.data)
-      }   
-
-#### 1.5 Khao Chong ####
-
-      # List all trees for KCH
-      KCH.trees <- list.files("~/Desktop/Taper/Current/TaperCorrection//RawTaperData/KCH/contours",
-                              full.names = F, no..=F)
-      KCH.files <- list.files("~/Desktop/Taper/Current/TaperCorrection//RawTaperData/KCH/contours",
-                              full.names = T, no..=F)
-      
-      # For each tree, read in all cross-section point files
-      for(i in 1:length(KCH.trees)){
-        # Count numner of cross-sections for this tree
-        n=length(list.files(KCH.files[i]))
-        # Make a data frame to save results
-        tree.data=data.frame(Tag=rep(KCH.trees[i],n),
-                             Site=rep("KCH",n),
-                             ht=NA,
-                             perim=NA,
-                             area=NA,
-                             d=NA,
-                             iso.quo=NA)
-        # For each cross-section calculate height, perimeter, area, diameter
-        for(j in 1:n){
-          # Read in text file to make a table of all points in cross-section. Columns are X,Y,and Z-values of points. 
-          vertices=read.table(paste(KCH.files[i],
-                                    '/c',
-                                    j,
-                                    '.txt',
-                                    sep=''),header=T)
-          # Calculate height of cross-section
-          tree.data$ht[j]=mean(vertices[,3])
-          # Calculate area of cross-section  
-          tree.data$area[j]=splancs::areapl(cbind(vertices[,1],vertices[,2]))
-          # Calculate perimeter of cross-section  
-          tree.data$perim[j] = calc.perim(vertices)	
-          # Find convex hull
-          tree.chull <- chull(vertices[,1:2])
-          # Calculate area from convex hull
-          perim.chull <- calc.perim(vertices[tree.chull,])
-          # Estimate diameter from convex hull area
-          tree.data$d[j] <- perim.chull/pi
-        }
-        
-        # For all cross-sections, calculate circularity (iso.quo)
-        tree.data$iso.quo = (4*pi*tree.data$area)/((tree.data$perim)^2)
-        
-        # Save info
-        contours <- rbind(contours,tree.data)
-      }  
-
-      contours$ID <- paste(contours$Site, contours$Tag, sep="-")
-      
-      write.csv(contours, file="ContourData.csv", row.names=F)
-
-#### 2.0 Compare candidate taper models #####
-      
-    contours <- read.csv("ContourData.csv")  
-      
-  # Find the name of all trees with cross-sectional measurements
-    ContourTrees <- unique(contours$ID)
-      
-  ## Define different taper models
-  
-  eqn.names <- c("Metcalf et al. (2009)",  # 1
-				"Kozak et al. (1969)",  # 2
-				"Ormerod (1973)",  # 3
-				"Forslund (1990)",  # 4
-				"Riemer et al. (1995)"  # 5
-				)  # References in literature for each equation
-				
-    # For each model, Eqn defines the taper equation as proposed in the literature
-    #  Args:
-    #    h: vector of measurement heights (m) (Equations 1-5)
-    #    H: measured total tree height (m) (Equations 2-5)
-    #    DBH: parameter for diameter at 1.3 m height (cm) (Equations 1-5)
-    #    b1: taper parameter (Equations 1-5)
-    #    b2: taper parameter (Equations 4,5)
-    #    b3: taper parameter (Equation 5)
-    #  Returns: 
-    #    A vector of calculated diameters for each corresponding measurment height. 
-    #
-	# For each model, Lk defines the negative log likelihood function for a set of 
-	#   measurement heights and diameters given a set of parameter values.
-	#  Args:
-	#    par: vector of parameter values for each model (Equations 1-5)
-	#      sigma: standard deviation between fitted values and expected values
-	#      DBH: parameter for diameter at 1.3 m height (cm) (Equations 1-5)
-    #      b1: taper parameter (Equations 1-5)
-    #      b2: taper parameter (Equations 4,5)
-    #      b3: taper parameter (Equation 5)
-    #    h: vector of measurement heights (m) (Equations 1-5)
-    #    d: vector of measured diameters (cm) (Equations 1-5)
-    #    H: measured total tree height (m) (Equations 2-5)
-    #  Returns:
-    #    The negative log likelihood for the set of measurement heights and diameters given 
-    #    the set of parameter values.
-    #
-	# For each model, Fit.Eqn finds the best-fit paramater values for a set of measurement
-	# heights and diamteres by minimizing negative log likelihood
-	#  Args:
-	#    par: vector of parameter values for each model (Equations 1-5)
-	#      sigma: standard deviation between fitted values and expected values
-	#      DBH: parameter for diameter at 1.3 m height (cm) (Equations 1-5)
-    #      b1: taper parameter (Equations 1-5)
-    #      b2: taper parameter (Equations 4,5)
-    #      b3: taper parameter (Equation 5)
-    #    h: vector of measurement heights (m) (Equations 1-5)
-    #    d: vector of measured diameters (cm) (Equations 1-5)
-    #    H: measured total tree height (m) (Equations 2-5)
-    #  Returns:
-    #    The optimization results from minimizing the negative log likelihood function, 
-    #    including parameter values ($par) and the negative log likelihood of the resulting 
-    #    fit ($value).
-    
-    					
-    #1. Metcalf et al. (2009)
-     Eqn1 <- function(h,DBH,b1) {DBH*exp(-b1*(h-1.3))}
-     Lk1 <- function(par,h,d) {
-       sigma <- par[1]
-       DBH   <- par[2]
-       b1    <- par[3]
-       res   <- Eqn1(h,DBH,b1)-d
-       neglk <- -sum(dnorm(res,sd = sigma,log=T))
-       return(neglk)
-     }
-     Fit.Eqn1= function(par,h,d) {
-       return(optim(par,Lk1,h=h,d=d))
-	 }
-
-    #2. Kozak et al. (1969)
-     Eqn2 <- function(h,H,DBH,b1) {DBH*sqrt(b1*(1-2*(h/H)+(h/H)^2))}
-     Lk2 <- function(par,h,d,H) {
-       sigma <- par[1]
-       DBH   <- par[2]
-       b1    <- par[3]
-       res   <- Eqn2(h,H,DBH,b1)-d
-       neglk <- -sum(dnorm(res,sd = sigma,log=T))
-       return(neglk)
-     }
-     Fit.Eqn2= function(par,h,d,H) {
-       return(optim(par,Lk2,h=h,d=d,H=H))
-     }
-		
-    #3. Ormerod (1973)
-    Eqn3 <- function(h,H,DBH,b1) {DBH*(((H-h)/(H-1.3))^b1)}
-    Lk3 <- function(par,h,d,H) {
-      sigma	<- par[1]
-      DBH   <- par[2]
-      b1    <- par[3]
-      res <- Eqn3(h,H,DBH,b1)-d
-      neglk <- -sum(dnorm(res,sd = sigma,log=T))
-      return(neglk)
-    }
-    Fit.Eqn3= function(par,h,d,H) {
-      return(optim(par,Lk3,h=h,d=d,H=H))
-    }
-		
-    #4. Forslund (1990)
-    Eqn4 <- function(h,H,DBH,b1,b2) {DBH*(1-(h/H)^b1)^(1/b2)}
-    Lk4 <- function(par,h,d,H) {
-      sigma	<- par[1]
-      DBH   <- par[2]
-      b1    <- par[3]
-      b2    <- par[4]
-      res   <- Eqn4(h,H,DBH,b1,b2)-d
-      neglk <- -sum(dnorm(res,sd = sigma,log=T))
-      return(neglk)
-    }
-    Fit.Eqn4= function(par,h,d,H) {
-      return(optim(par,Lk4,h=h,d=d,H=H))
-    }
-	
-    #5. Riemer et al. (1995)
-    Eqn5 <- function(h,H,DBH,b1,b2,b3) {b1*DBH/(1-exp(b3*(1.3-H)))+(DBH/2-b1*DBH)*(1-1/(1-exp(b2*(1.3-H))))+exp(-b2*h)*(exp(1.3*b2)*(DBH/2-b1*DBH)/(1-exp(b2*(1.3-H))))-exp(b3*h)*(b1*DBH*exp(-b3*H)/(1-exp(b3*(1.3-H))))}
-    Lk5 <- function(par,h,d,H) {
-      sigma	<- par[1]
-      DBH   <- par[2]
-      b1    <- par[3]
-      b2    <- par[4]
-      b3    <- par[5]
-      res   <- Eqn5(h,H,DBH,b1,b2,b3)-d
-      neglk <- -sum(dnorm(res,sd = sigma,log=T))
-      return(neglk)
-    }
-    Fit.Eqn5= function(par,h,d,H) {
-      return(optim(par,Lk5,h=h,d=d,H=H))
-    }
-    
-          # Compare the goodness of fit for each taper model using AICc values
-        # CalcAICc calculates the AICc values for the fit of a taper model to a set of 
-        # diameter measurements.
-	    #  Args:
-	    #    fitresult: The return argument from fitting taper models as defined above (i.e. 
-	    #    the output from Fit.Eqn1, Fit.Eqn2, Fit.Eqn3, Fit.Eqn4, or Fit.Eqn5)
-        #    d: vector of measured diameters (cm)
-        #  Returns:
-        #    The AICc value (numeric)
-        CalcAICc <- function(fitresult,d) {
-          AIC <- 2*fitresult$value+2*length(fitresult$par)
-          AICc <- AIC+(2*length(fitresult$par)*(length(fitresult$par)+1))/(length(d)-length(fitresult$par)-1)
-          return(AICc)
-        }
-
-  
-  # Define columns to save results
-    TreeSample$AIC1 <- NA
-    TreeSample$AIC2 <- NA
-    TreeSample$AIC3 <- NA
-    TreeSample$AIC4 <- NA
-    TreeSample$AIC5 <- NA
-  
-  # For each tree, loop through to calculate taper    
-    for(i in 1:length(ContourTrees)){
-      
-      tree.i <- contours[contours$ID==ContourTrees[i],]
-      info.i <- TreeSample[TreeSample$ID==ContourTrees[i],]
-      
-      # Find measurements up to 4 m above the HOM, and find the mean ciruclarity (iso.quo) above the HOM
-      tree.hom <- tree.i[tree.i$ht > info.i$HOM & tree.i$ht <= info.i$HOM + 3.6,]
-      hom.iso <- mean(tree.hom$iso.quo)
-      tree.hom <- tree.hom[!is.na(tree.hom$ht),]
-      
-      # Find measurements above the HOM or with mean circularity of measurements above the HOM
-      tree.iso <- tree.i[(tree.i$ht > info.i$HOM | tree.i$iso.quo >= hom.iso) & tree.i$ht <= info.i$HOM + 3.6,]
-      tree.iso <- tree.iso[tree.iso$ht <= min(tree.iso$ht) + 3.6,]
-      tree.iso <- tree.iso[!is.na(tree.iso$ht),]
-      
-      # Proceed if there are remaining measurements
-      if(!length(tree.iso$ht)==0 & !is.na(info.i$Ht)){
-      
-        #  Fit each proposed taper function
-        # MAKE SURE all diameters are in cm
-        results.eqn1 <- Fit.Eqn1(
-  	    par=c(sigma=1,DBH=info.i$DBH/10,b1=0.05),
-  	    h=tree.iso$ht,
-  	    d=tree.iso$d*100)
-        results.eqn2 <- Fit.Eqn2(
-  	    par=c(sigma=1,DBH=info.i$DBH/10,b1=1),
-  	    h=tree.iso$ht,
-  	    d=tree.iso$d*100,
-  	    H=info.i$Ht)
-        results.eqn3 <- Fit.Eqn3(
-  	    par=c(sigma=1,DBH=info.i$DBH/10,b1=1),
-  	    h=tree.iso$ht,
-  	    d=tree.iso$d*100,
-  	    H=info.i$Ht)	  
-        results.eqn4 <- Fit.Eqn4(
-  	    par=c(sigma=1,DBH=info.i$DBH/10,b1=1,b2=0.1),
-  	    h=tree.iso$ht,
-  	    d=tree.iso$d*100,
-  	    H=info.i$Ht)
-        results.eqn5 <- Fit.Eqn5(
-  	    par=c(sigma=1,DBH=info.i$DBH/10,b1=-1,b2=1,b3=-1),
-  	    h=tree.iso$ht,
-  	    d=tree.iso$d*100,
-  	    H=info.i$Ht)
-      
-        # Calculate AIC
-        AICc=c(CalcAICc(results.eqn1,tree.iso$d),
-      	    CalcAICc(results.eqn2,tree.iso$d),
-      	    CalcAICc(results.eqn3,tree.iso$d),
-      	    CalcAICc(results.eqn4,tree.iso$d),
-      	    CalcAICc(results.eqn5,tree.iso$d))
-        
-        # Calculate whether within 2 of lowest AIC
-        AICc <- AICc-min(AICc)
-        AICbest <- AICc<=2
-        
-        # Save results
-        TreeSample[TreeSample$ID==ContourTrees[i],"AIC1"] <- AICbest[1]
-        TreeSample[TreeSample$ID==ContourTrees[i],"AIC2"] <- AICbest[2]
-        TreeSample[TreeSample$ID==ContourTrees[i],"AIC3"] <- AICbest[3]
-        TreeSample[TreeSample$ID==ContourTrees[i],"AIC4"] <- AICbest[4]
-        TreeSample[TreeSample$ID==ContourTrees[i],"AIC5"] <- AICbest[5]
-
-        # Save range of heights used to fit taper parameter
-        TreeSample[TreeSample$ID==ContourTrees[i],"range.iso"] <- range(tree.iso$ht)[2]-range(tree.iso$ht)[1]
-      }
-    }
-    
-    # Save only measurements to use in a separate data frame called Taper Sample. These are trees for which
-    # a taper parameter was estimated, and which had at least 1.4 m of trunk shape measurements.
-    TaperSample <- TreeSample[TreeSample$range.iso >= 1.4,]
-    TaperSample <- TaperSample[!is.na(TaperSample$Site),]
-    
-    # Summarize by site
-    bestModels <- data.frame(Site=sites,
-                             Model1=NA,
-                             Model2=NA,
-                             Model3=NA,
-                             Model4=NA,
-                             Model5=NA)
-    for(i in 1:length(sites)){
-      bestModels$Model1[i] <- dim(TaperSample[TaperSample$AIC1==T & TaperSample$Site==sites[i],])[1]
-      bestModels$Model2[i] <- dim(TaperSample[TaperSample$AIC2==T & TaperSample$Site==sites[i],])[1]
-      bestModels$Model3[i] <- dim(TaperSample[TaperSample$AIC3==T & TaperSample$Site==sites[i],])[1]
-      bestModels$Model4[i] <- dim(TaperSample[TaperSample$AIC4==T & TaperSample$Site==sites[i],])[1]
-      bestModels$Model5[i] <- dim(TaperSample[TaperSample$AIC5==T & TaperSample$Site==sites[i],])[1]
-    }
-    
-    bestModels$Site <- sitesNames
-    write.csv(bestModels, file = "TableS5_TaperModelComparison.csv", row.names = F)
-   
-    
-#### 2. Calculate taper parameter for all sampled trees #####
-      
-  # Find the name of all trees with cross-sectional measurements
-    ContourTrees <- unique(contours$ID)
-  
-  # Define taper equation
-    Eqn1 <- function(h,DBH,b1) {DBH*exp(-b1*(h-1.3))}
-    
-  # Define negative log likelihood function for optimization
-    Lk1 <- function(par,h,d) {
-      sigma <- par[1]
-      DBH   <- par[2]
-      b1    <- par[3]
-      res   <- Eqn1(h,DBH,b1)-d
-      neglk <- -sum(dnorm(res,sd = sigma,log=T))
-      return(neglk)
-    }
-    
-  # Define function to find the best-fit taper parameter by optimizing the likelihood function above  
-    Fit.Eqn1= function(par,h,d) {
-      return(optim(par,Lk1,h=h,d=d))
-    }
-  
-  # Define columns to save results
-    TreeSample$b1.hom <- NA # Taper parameter - measurements above HOM
-    TreeSample$b1.iso <- NA # Taper parameter - meaurements above HOM or circular
-    TreeSample$range.hom <- NA # Height range - measurements above HOM
-    TreeSample$range.iso <- NA # Height range - meaurements above HOM or circular
-    TreeSample$iso <- NA # Circularity at height of measurement
-  
-  # For each tree, loop through to calculate taper    
-    for(i in 1:length(ContourTrees)){
-      tree.i <- contours[contours$ID==ContourTrees[i],]
-      info.i <- TreeSample[TreeSample$ID==ContourTrees[i],]
-      
-      # Find measurements up to 4 m above the HOM, and find the mean ciruclarity (iso.quo) above the HOM
-      tree.hom <- tree.i[tree.i$ht > info.i$HOM & tree.i$ht <= info.i$HOM + 3.6,]
-      hom.iso <- mean(tree.hom$iso.quo)
-      tree.hom <- tree.hom[!is.na(tree.hom$ht),]
-      
-      # Find measurements above the HOM or with mean circularity of measurements above the HOM
-      tree.iso <- tree.i[(tree.i$ht > info.i$HOM | tree.i$iso.quo >= hom.iso) & tree.i$ht <= info.i$HOM + 3.6,]
-      tree.iso <- tree.iso[tree.iso$ht <= min(tree.iso$ht) + 3.6,]
-      tree.iso <- tree.iso[!is.na(tree.iso$ht),]
-      
-      # Store ciruclarity at the height of measurement
-      TreeSample[TreeSample$ID==ContourTrees[i],"iso"] <- tree.hom$iso.quo[1]
-      
-      # Fit taper functions
-      results.hom <- ifelse(length(tree.hom$ht)==0,NA,
-                            Fit.Eqn1(par=c(sigma=1,DBH=info.i$DBH/1000,b1=0.05),
-                                     h=tree.hom$ht, d=tree.hom$d))
-      results.iso <- ifelse(length(tree.iso$ht)==0,NA,
-                            Fit.Eqn1(par=c(sigma=1,DBH=info.i$DBH/1000,b1=0.05),
-                                     h=tree.iso$ht, d=tree.iso$d))
-      
-      # Save taper parameter results in data frame
-      TreeSample[TreeSample$ID==ContourTrees[i],"b1.hom"] <- ifelse(is.na(results.hom), NA, results.hom[[1]][3])
-      TreeSample[TreeSample$ID==ContourTrees[i],"b1.iso"] <- ifelse(is.na(results.iso), NA, results.iso[[1]][3])
-      
-      # Save range of heights used to fit taper parameter
-      TreeSample[TreeSample$ID==ContourTrees[i],"range.hom"] <- ifelse(is.na(results.hom),NA,range(tree.hom$ht)[2]-range(tree.hom$ht)[1])
-      TreeSample[TreeSample$ID==ContourTrees[i],"range.iso"] <- ifelse(is.na(results.iso),NA,range(tree.iso$ht)[2]-range(tree.iso$ht)[1])
-    }
-    
-      # Convert DBH to cm
-      TreeSample$DBH <- TreeSample$DBH/10
-    
-    # Save only measurements to use in a separate data frame called Taper Sample. These are trees for which
-    # a taper parameter was estimated, and which had at least 1.4 m of trunk shape measurements.
-    TaperSample <- TreeSample[!is.na(TreeSample$b1.iso),]
-    TaperSample <- TaperSample[TaperSample$range.iso >= 1.4,]
-    
-    # Save only trees with circularity measurement
-    CircSample <- TreeSample[!is.na(TreeSample$iso),]
-    
-#### 3. Compare models explaining variation in taper parameter ####
+#### 1. Compare models explaining variation in taper parameter ####
     
     # Models WITHOUT family random effect
     
     # Null model
-    modelnull <- lme4::lmer(b1.iso~ (1|Site), data = TaperSample)
+    modelnull <- lmer(b1.iso~ (1|Site), data = TaperSample)
     # With one variable
-    model1a <- lme4::lmer(b1.iso~log(DBH) + (1|Site), data = TaperSample)
-    model1b <- lme4::lmer(b1.iso~log(HOM) + (1|Site), data = TaperSample)
-    model1c <- lme4::lmer(b1.iso~log(WSG) + (1|Site), data = TaperSample)
+    model1a <- lmer(b1.iso~log(DBH) + (1|Site), data = TaperSample)
+    model1b <- lmer(b1.iso~log(HOM) + (1|Site), data = TaperSample)
+    model1c <- lmer(b1.iso~log(WSG) + (1|Site), data = TaperSample)
     # With two variables
-    model2a <- lme4::lmer(b1.iso~log(DBH) + log(HOM) + (1|Site), data = TaperSample)
-    model2b <- lme4::lmer(b1.iso~log(DBH) + log(WSG) + (1|Site), data = TaperSample)
-    model2c <- lme4::lmer(b1.iso~log(HOM) + log(WSG) + (1|Site), data = TaperSample)
+    model2a <- lmer(b1.iso~log(DBH) + log(HOM) + (1|Site), data = TaperSample)
+    model2b <- lmer(b1.iso~log(DBH) + log(WSG) + (1|Site), data = TaperSample)
+    model2c <- lmer(b1.iso~log(HOM) + log(WSG) + (1|Site), data = TaperSample)
     # With three variables
-    model3a <- lme4::lmer(b1.iso~log(DBH) + log(HOM) + log(WSG) + (1|Site), data = TaperSample)
+    model3a <- lmer(b1.iso~log(DBH) + log(HOM) + log(WSG) + (1|Site), data = TaperSample)
     
 
     # Make a table comparing models (for main text)    
     ModelCompare <- anova(modelnull, model1a, model1b, model1c, model2a, model2b, model2c, model3a)
-    ModelCompare$R2marginal <- c(MuMIn::r.squaredGLMM(modelnull)[1], 
-                                 MuMIn::r.squaredGLMM(model1a)[1], 
-                                 MuMIn::r.squaredGLMM(model1b)[1], 
-                                 MuMIn::r.squaredGLMM(model1c)[1], 
-                                 MuMIn::r.squaredGLMM(model2a)[1], 
-                                 MuMIn::r.squaredGLMM(model2b)[1], 
-                                 MuMIn::r.squaredGLMM(model2c)[1],
-                                 MuMIn::r.squaredGLMM(model3a)[1])
-    ModelCompare$R2conditional <- c(MuMIn::r.squaredGLMM(modelnull)[2], 
-                                    MuMIn::r.squaredGLMM(model1a)[2], 
-                                    MuMIn::r.squaredGLMM(model1b)[2], 
-                                    MuMIn::r.squaredGLMM(model1c)[2], 
-                                    MuMIn::r.squaredGLMM(model2a)[2], 
-                                    MuMIn::r.squaredGLMM(model2b)[2], 
-                                    MuMIn::r.squaredGLMM(model2c)[2],
-                                    MuMIn::r.squaredGLMM(model3a)[2])
+    ModelCompare$R2marginal <- c(r.squaredGLMM(modelnull)[1], 
+                                 r.squaredGLMM(model1a)[1], 
+                                 r.squaredGLMM(model1b)[1], 
+                                 r.squaredGLMM(model1c)[1], 
+                                 r.squaredGLMM(model2a)[1], 
+                                 r.squaredGLMM(model2b)[1], 
+                                 r.squaredGLMM(model2c)[1],
+                                 r.squaredGLMM(model3a)[1])
+    ModelCompare$R2conditional <- c(r.squaredGLMM(modelnull)[2], 
+                                    r.squaredGLMM(model1a)[2], 
+                                    r.squaredGLMM(model1b)[2], 
+                                    r.squaredGLMM(model1c)[2], 
+                                    r.squaredGLMM(model2a)[2], 
+                                    r.squaredGLMM(model2b)[2], 
+                                    r.squaredGLMM(model2c)[2],
+                                    r.squaredGLMM(model3a)[2])
     ModelCompare$Description <- c(paste("b = ",round(summary(modelnull)$coefficients[1],3)," + Site", sep=""),
                                   paste("b = ",round(summary(model1a)$coefficients[1,1],3)," + ",round(summary(model1a)$coefficients[2,1],3),"*log(DAB) + Site", sep=""),
                                   paste("b = ",round(summary(model1b)$coefficients[1,1],3)," + ",round(summary(model1b)$coefficients[2,1],3),"*log(HOM) + Site", sep=""),
@@ -672,24 +62,39 @@ sitesNames <- c("Amacayacu",
     ModelResults <- ModelResults[order(ModelResults$AIC),]
     ModelResults$dAIC <- ModelResults$AIC-min(ModelResults$AIC)
     
-    
-#### 4. Save files ####    
-    write.csv(ModelResults, file="Table3_TaperMixedModelComparison.csv",
-              row.names = F)
-    write.csv(TaperSample, file="DataFile_TaperParameterSample.csv",
-              row.names = F)
-    write.csv(TreeSample, file="DataFile_AllTaperEstimates.csv",
-              row.names = F)
-    write.csv(CircSample, file="DataFile_CircSample.csv",
-              row.names = F)
-
   # Verify that residuals of best model don't vary by site using a 1-way ANOVA
     ModelResiduals <- data.frame(residual = residuals(model3a),
-                                 site = TaperSample[TaperSample$b1.iso>0,"Site"])
+                                 site = TaperSample$Site)
     residualANOVA <- lm(residual~site, data=ModelResiduals)
     summary(residualANOVA)
+    
+#### 2. Save results in Table 2 ####    
+    write.csv(ModelResults, file="ResultsFiles/Table2_TaperMixedModelComparison.csv",
+              row.names = F)
 
-#### Revision edit: Make Table 3 with taper by site ####
+#### 3. Taper variation among sites and families ####
+
+     # Krusal-Wallis tests for variation among sites
+      b.Test <- kruskal.test(list(TaperSample[TaperSample$Site=='AMA','b1.iso'],
+                                  TaperSample[TaperSample$Site=='BCI','b1.iso'],
+                                  TaperSample[TaperSample$Site=='BKT','b1.iso'],
+                                  TaperSample[TaperSample$Site=='HKK','b1.iso'],
+                                  TaperSample[TaperSample$Site=='KCH','b1.iso']))
+      
+      b.Test30 <- kruskal.test(list(TaperSample[TaperSample$Site=='AMA' & TaperSample$DBH>=30,'b1.iso'],
+                                    TaperSample[TaperSample$Site=='BCI' & TaperSample$DBH>=30,'b1.iso'],
+                                    TaperSample[TaperSample$Site=='BKT' & TaperSample$DBH>=30,'b1.iso'],
+                                    TaperSample[TaperSample$Site=='HKK' & TaperSample$DBH>=30,'b1.iso'],
+                                    TaperSample[TaperSample$Site=='KCH' & TaperSample$DBH>=30,'b1.iso']))
+      
+      # Are there significant differences among families?
+        kruskal.test(x = TaperSample$b1.iso, g = TaperSample$Family)
+        
+      # additional variation explained by family
+        model3a_fam <- lmer(b1.iso~log(DBH) + log(HOM) + log(WSG) + (1|Site) + (1|Family), data = TaperSample)
+        r.squaredGLMM(model3a_fam)
+
+#### 4. Make Table 3 with taper by site ####
   
   # Calculate EDBH, basal area, and AGB for each tree
     agb.allometry <- function(E,wsg,dbh) {exp(-1.803-0.976*E+0.976*log(wsg)
@@ -703,6 +108,17 @@ sitesNames <- c("Amacayacu",
     
     TaperSample$BA <- pi*(TaperSample$EDBH/2)^2
     
+    # Define environmental factor "E" used in Chave et al. 2014 allometry for each site
+    # Previously run code (takes a while to run) to find values
+    # Retrieve values of E for each plot using database from Chave et al. 2014
+        # Call in source info:
+        #source("http://chave.ups-tlse.fr/pantropical_allometry/readlayers.r")
+        # Define coordinates of each plot:
+        #AMA.coord <- cbind(-70.27,-3.81); E.AMA <- retrieve_raster("E",AMA.coord)
+        #BCI.coord <- cbind(-79.85, 9.15); E.BCI <- retrieve_raster("E",BCI.coord)
+        #BKT.coord <- cbind(103.75,1.25); E.BKT <- retrieve_raster("E",BKT.coord)
+        #HKK.coord <- cbind(99.22, 15.63); E.HKK <- retrieve_raster("E",HKK.coord)
+        #KCH.coord <- cbind(99.80, 7.54); E.KCH <- retrieve_raster("E",KCH.coord)
     TaperSample$E <- NA
       TaperSample[TaperSample$Site=="AMA","E"] <- -0.07928769
       TaperSample[TaperSample$Site=="BCI","E"] <- 0.04944549
@@ -714,15 +130,12 @@ sitesNames <- c("Amacayacu",
                                      wsg = TaperSample$WSG,
                                      dbh = TaperSample$DBH)
     
-    TaperSample$Vol <- TaperSample$AGB/TaperSample$WSG
-    
     TaperBySite <- data.frame(Site = c("AMA","BCI","BKT","HKK","KCH"),
                               n = NA,
                               Mean = NA,
                               SD = NA,
                               Mean.BA = NA,
-                              Mean.AGB = NA,
-                              Mean.Vol = NA)
+                              Mean.AGB = NA)
     
     for(i in 1:length(TaperBySite$Site)){
       TaperBySite[i,"n"] <- length(TaperSample[TaperSample$Site==TaperBySite$Site[i],"b1.iso"])
@@ -732,19 +145,33 @@ sitesNames <- c("Amacayacu",
                                                 w = TaperSample[TaperSample$Site==TaperBySite$Site[i],"BA"])
       TaperBySite[i,"Mean.AGB"] <- weighted.mean(x = TaperSample[TaperSample$Site==TaperBySite$Site[i],"b1.iso"],
                                                  w = TaperSample[TaperSample$Site==TaperBySite$Site[i],"AGB"])
-      TaperBySite[i,"Mean.Vol"] <- weighted.mean(x = TaperSample[TaperSample$Site==TaperBySite$Site[i],"b1.iso"],
-                                                 w = TaperSample[TaperSample$Site==TaperBySite$Site[i],"Vol"])
     }
     
-    write.csv(TaperBySite, file="TaperVariationTable.csv")
+    write.csv(TaperBySite, file="ResultsFiles/Table3_TaperVariationBySite.csv")
       
-#### Revision edit: Make Table S6 with circularity by site ####    
-# Calculate EDBH, basal area, and AGB for each tree
-    agb.allometry <- function(E,wsg,dbh) {exp(-1.803-0.976*E+0.976*log(wsg)
-                                              + 2.673*log(dbh) - 0.0299*(log(dbh)^2))}
+#### 5. Circularity variation among sites and families ####
+    CircSample <- read.csv("DataFiles/DataFile_CircSample.csv")
     
-    taper.eqn <- function(d,h,b1) {d/(exp(-b1*(h-1.3)))}
+    # Krusal-Wallis tests for difference among sites
+      iso.Test <- kruskal.test(list(CircSample[CircSample$Site=='AMA','iso'],
+                                  CircSample[CircSample$Site=='BCI','iso'],
+                                  CircSample[CircSample$Site=='BKT','iso'],
+                                  CircSample[CircSample$Site=='HKK','iso'],
+                                  CircSample[CircSample$Site=='KCH','iso']))
+      
+      iso.Test30 <- kruskal.test(list(CircSample[CircSample$Site=='AMA' & CircSample$DBH>=30,'iso'],
+                                    CircSample[CircSample$Site=='BCI' & CircSample$DBH>=30,'iso'],
+                                    CircSample[CircSample$Site=='BKT' & CircSample$DBH>=30,'iso'],
+                                    CircSample[CircSample$Site=='HKK' & CircSample$DBH>=30,'iso'],
+                                    CircSample[CircSample$Site=='KCH' & CircSample$DBH>=30,'iso']))
+      
+  # Are there significant differences among families?
+    kruskal.test(x = CircSample$iso, g = CircSample$Family)
+        
+#### 5. Make Table S6 with circularity by site ####
     
+  # Calculate EDBH, basal area, and AGB for each tree
+ 
     CircSample$EDBH <- taper.eqn(d = CircSample$DBH,
                                   h = CircSample$HOM,
                                   b1 = CircSample$b1.iso)
@@ -762,15 +189,12 @@ sitesNames <- c("Amacayacu",
                                      wsg = CircSample$WSG,
                                      dbh = CircSample$DBH)
     
-    CircSample$Vol <- CircSample$AGB/CircSample$WSG
-    
     CircBySite <- data.frame(Site = c("AMA","BCI","BKT","HKK","KCH"),
                              n = NA,
                               Mean = NA,
                               SD = NA,
                               Mean.BA = NA,
-                              Mean.AGB = NA,
-                              Mean.Vol = NA)
+                              Mean.AGB = NA)
     
     for(i in 1:length(CircBySite$Site)){
       CircBySite[i,"n"] <- length(CircSample[CircSample$Site==CircBySite$Site[i],"iso"])
@@ -780,603 +204,6 @@ sitesNames <- c("Amacayacu",
                                                 w = CircSample[CircSample$Site==CircBySite$Site[i],"BA"])
       CircBySite[i,"Mean.AGB"] <- weighted.mean(x = CircSample[CircSample$Site==CircBySite$Site[i],"iso"],
                                                  w = CircSample[CircSample$Site==CircBySite$Site[i],"AGB"])
-      CircBySite[i,"Mean.Vol"] <- weighted.mean(x = CircSample[CircSample$Site==CircBySite$Site[i],"iso"],
-                                                 w = CircSample[CircSample$Site==CircBySite$Site[i],"Vol"])
     }
     
-    write.csv(CircBySite, file="CircVariationTable.csv")
-#### Revision edit: Explore alternate taper parameter analysis options ####
-    
-     # Krusal-Wallis test
-      b.Test <- kruskal.test(list(TaperSample[TaperSample$Site=='AMA','b1.iso'],
-                                  TaperSample[TaperSample$Site=='BCI','b1.iso'],
-                                  TaperSample[TaperSample$Site=='BKT','b1.iso'],
-                                  TaperSample[TaperSample$Site=='HKK','b1.iso'],
-                                  TaperSample[TaperSample$Site=='KCH','b1.iso']))
-      
-      b.Test30 <- kruskal.test(list(TaperSample[TaperSample$Site=='AMA' & TaperSample$DBH>=30,'b1.iso'],
-                                    TaperSample[TaperSample$Site=='BCI' & TaperSample$DBH>=30,'b1.iso'],
-                                    TaperSample[TaperSample$Site=='BKT' & TaperSample$DBH>=30,'b1.iso'],
-                                    TaperSample[TaperSample$Site=='HKK' & TaperSample$DBH>=30,'b1.iso'],
-                                    TaperSample[TaperSample$Site=='KCH' & TaperSample$DBH>=30,'b1.iso']))
-      
-      # one-way ANOVA for family
-        familyAnova <- aov(b1.iso~Family, data=TaperSample)
-        summary(familyAnova)
-        
-      # additional variation explained by family
-        model3a_fam <- lme4::lmer(b1.iso~log(DBH) + log(HOM) + log(WSG) + (1|Site) + (1|Family), data = TaperSample)
-        MuMIn::r.squaredGLMM(model3a_fam)
-        
-      # Look at distribution of values-- neither normal nor lognormal
-        # Taper parameter
-        shapiro.test(TaperSample$b1.iso)
-        shapiro.test(log(TaperSample$b1.iso))
-        shapiro.test(sqrt(TaperSample$b1.iso))
-      
-        hist(TaperSample$b1.iso,
-             breaks = seq(-0.1,0.2,0.01),
-             col="black",border="white", xlab = "Taper parameter")
-        hist(log(TaperSample$b1.iso),
-             breaks = seq(-10,1,0.4),
-             col="black",border="white", xlab = "Taper parameter")
-        hist(sqrt(TaperSample$b1.iso),
-             col="black",border="white", xlab = "Taper parameter")
-        
-        # DAB -- is lognormal
-        shapiro.test(TaperSample$DBH)
-        shapiro.test(log(TaperSample$DBH)) 
-        
-        # HOM -- neither normal nor lognormal
-        shapiro.test(TaperSample$HOM)
-        shapiro.test(log(TaperSample$HOM))
-        
-        hist(TaperSample$HOM,
-             breaks = seq(1.3,7.9,0.2),
-             col="black",border="white", xlab = "HOM")
-        
-        # WSG -- neither normal nor lognormal
-        shapiro.test(TaperSample$WSG)
-        shapiro.test(log(TaperSample$WSG))
-        
-        hist(TaperSample$WSG,
-             breaks = seq(0.2,1,0.03),
-             col="black",border="white", xlab = "WSG")
-        
-
-
-    
-#### Revision edit: Estimate AGB with various models and save Table S12 ####
-        
-  # Define necessary functions
-    agb.allometry <- function(E,wsg,dbh) {exp(-1.803-0.976*E+0.976*log(wsg)
-                                              + 2.673*log(dbh) - 0.0299*(log(dbh)^2))}
-    
-    taper.eqn <- function(d,h,b1) {d/(exp(-b1*(h-1.3)))}
-    
-  # Add E for each site
-      TaperSample$E <- NA
-      TaperSample[TaperSample$Site=="AMA","E"] <- -0.07928769
-      TaperSample[TaperSample$Site=="BCI","E"] <- 0.04944549
-      TaperSample[TaperSample$Site=="BKT","E"] <- -0.05956875
-      TaperSample[TaperSample$Site=="HKK","E"] <- 0.3194663
-      TaperSample[TaperSample$Site=="KCH","E"] <- 0.04786947
-      
-  # Calculate AGB with various taper scenarios
-    # Uncorrected AGB
-      TaperSample$AGB_Uncorected <- agb.allometry(E = TaperSample$E,
-                                                 wsg = TaperSample$WSG,
-                                                 dbh = TaperSample$DBH)
-      
-    # AGB without site and wood density differences to better sort by size
-      TaperSample$AGB_Sort <- agb.allometry(E = mean(TaperSample$E),
-                                            wsg = mean(TaperSample$WSG),
-                                            dbh = TaperSample$DBH)  
-      
-    # AGB with measured taper
-      TaperSample$EDBH_MeasTaper <- taper.eqn(d = TaperSample$DBH,
-                                              h = TaperSample$HOM,
-                                              b1 = TaperSample$b1.iso)
-      TaperSample$AGB_MeasTaper <- agb.allometry(E = TaperSample$E,
-                                                 wsg = TaperSample$WSG,
-                                                 dbh = TaperSample$EDBH_MeasTaper)    
-        
-  # For each site, use bootstrapping to estimate AGB with CI's under various scenarios
-    nboot <- 1000
-    
-    # Amacayacu
-    
-        AGB_AMA <- data.frame(sample = 1:nboot,
-                          AGB_FullModel = NA,
-                          AGB_Cross3Pr = NA,
-                          AGB_Cross2Pr = NA,
-                          AGB_CrossMed = NA,
-                          b_med = NA)
-        
-        set.seed(1)
-        for(i in 1:nboot){
-          data.site <- TaperSample[TaperSample$Site=="AMA",]
-          
-          # Full taper model
-          sample.full <- sample(x = 1:dim(TaperSample)[1],
-                                size = dim(TaperSample)[1],
-                                replace = T)
-          data.full <- TaperSample[sample.full,]
-          model.full <- lme4::lmer(b1.iso~log(DBH) + log(HOM) + log(WSG) + (1|Site), data = data.full)
-          data.site$b <- predict(model.full, newdata = data.site)
-          data.site$EDBH <- taper.eqn(d = data.site$DBH,
-                                      h = data.site$HOM,
-                                      b1 = data.site$b)
-          data.site$AGB <- agb.allometry(E = data.site$E,
-                                         wsg = data.site$WSG,
-                                         dbh = data.site$EDBH)
-          AGB_AMA$AGB_FullModel[i] <- sum(data.site$AGB)
-          
-          # 3-parameter cross-validation
-          data.LOO <- data.full[!(data.full$Site=="AMA"),]
-          model.3pr <- lme4::lmer(b1.iso~log(DBH) + log(HOM) + log(WSG) + (1|Site), data = data.full)
-            model.3pr.int <- summary(model.3pr)$coefficients[1,1]
-            model.3pr.dbh <- summary(model.3pr)$coefficients[2,1]
-            model.3pr.hom <- summary(model.3pr)$coefficients[3,1]
-            model.3pr.wsg <- summary(model.3pr)$coefficients[4,1]
-          data.site$b <- model.3pr.int + model.3pr.dbh*log(data.site$DBH) + model.3pr.hom*log(data.site$HOM) + model.3pr.wsg*log(data.site$WSG)
-
-          data.site$EDBH <- taper.eqn(d = data.site$DBH,
-                                      h = data.site$HOM,
-                                      b1 = data.site$b)
-          data.site$AGB <- agb.allometry(E = data.site$E,
-                                         wsg = data.site$WSG,
-                                         dbh = data.site$EDBH)
-          AGB_AMA$AGB_Cross3Pr[i] <- sum(data.site$AGB)
-          
-          # 2-parameter cross-validation
-          data.LOO <- data.full[!(data.full$Site=="AMA"),]
-          model.2pr <- lme4::lmer(b1.iso~log(DBH) + log(HOM) + (1|Site), data = data.full)
-            model.2pr.int <- summary(model.2pr)$coefficients[1,1]
-            model.2pr.dbh <- summary(model.2pr)$coefficients[2,1]
-            model.2pr.hom <- summary(model.2pr)$coefficients[3,1]
-          data.site$b <- model.2pr.int + model.2pr.dbh*log(data.site$DBH) + model.2pr.hom*log(data.site$HOM)
-
-          data.site$EDBH <- taper.eqn(d = data.site$DBH,
-                                      h = data.site$HOM,
-                                      b1 = data.site$b)
-          data.site$AGB <- agb.allometry(E = data.site$E,
-                                         wsg = data.site$WSG,
-                                         dbh = data.site$EDBH)
-          AGB_AMA$AGB_Cross2Pr[i] <- sum(data.site$AGB)
-          
-          # "Median" taper value--tree where half of AGB is from smaller trees
-          data.LOO <- data.LOO[order(data.LOO$AGB_Sort),]
-          data.LOO$CmAGB <- NA
-          for(j in 1:dim(data.LOO)[1]){
-            data.LOO$CmAGB[j] <- sum(data.LOO$AGB_Sort[1:j])
-          }
-          
-          medDBH <- data.LOO[data.LOO$CmAGB > sum(data.LOO$AGB_MeasTaper)/2,"DBH"][1]
-          model.DAB <- lm(b1.iso~log(DBH), data = data.LOO)
-          b_med <- predict(model.DAB, newdata = data.frame(DBH = medDBH))
-          data.site$EDBH <- taper.eqn(d = data.site$DBH,
-                                      h = data.site$HOM,
-                                      b1 = b_med)
-          data.site$AGB <- agb.allometry(E = data.site$E,
-                                         wsg = data.site$WSG,
-                                         dbh = data.site$EDBH)
-          AGB_AMA$AGB_CrossMed[i] <- sum(data.site$AGB)
-          AGB_AMA$b_med[i] <- b_med
-        }
-
-    # Barro Colorado
-    
-        AGB_BCI <- data.frame(sample = 1:nboot,
-                          AGB_FullModel = NA,
-                          AGB_Cross3Pr = NA,
-                          AGB_Cross2Pr = NA,
-                          AGB_CrossMed = NA,
-                          b_med = NA)
-        
-        set.seed(1)
-        for(i in 1:nboot){
-          data.site <- TaperSample[TaperSample$Site=="BCI",]
-          
-          # Full taper model
-          sample.full <- sample(x = 1:dim(TaperSample)[1],
-                                size = dim(TaperSample)[1],
-                                replace = T)
-          data.full <- TaperSample[sample.full,]
-          model.full <- lme4::lmer(b1.iso~log(DBH) + log(HOM) + log(WSG) + (1|Site), data = data.full)
-          data.site$b <- predict(model.full, newdata = data.site)
-          data.site$EDBH <- taper.eqn(d = data.site$DBH,
-                                      h = data.site$HOM,
-                                      b1 = data.site$b)
-          data.site$AGB <- agb.allometry(E = data.site$E,
-                                         wsg = data.site$WSG,
-                                         dbh = data.site$EDBH)
-          AGB_BCI$AGB_FullModel[i] <- sum(data.site$AGB)
-          
-          # 3-parameter cross-validation
-          data.LOO <- data.full[!(data.full$Site=="BCI"),]
-          model.3pr <- lme4::lmer(b1.iso~log(DBH) + log(HOM) + log(WSG) + (1|Site), data = data.full)
-            model.3pr.int <- summary(model.3pr)$coefficients[1,1]
-            model.3pr.dbh <- summary(model.3pr)$coefficients[2,1]
-            model.3pr.hom <- summary(model.3pr)$coefficients[3,1]
-            model.3pr.wsg <- summary(model.3pr)$coefficients[4,1]
-          data.site$b <- model.3pr.int + model.3pr.dbh*log(data.site$DBH) + model.3pr.hom*log(data.site$HOM) + model.3pr.wsg*log(data.site$WSG)
-
-          data.site$EDBH <- taper.eqn(d = data.site$DBH,
-                                      h = data.site$HOM,
-                                      b1 = data.site$b)
-          data.site$AGB <- agb.allometry(E = data.site$E,
-                                         wsg = data.site$WSG,
-                                         dbh = data.site$EDBH)
-          AGB_BCI$AGB_Cross3Pr[i] <- sum(data.site$AGB)
-          
-          # 2-parameter cross-validation
-          data.LOO <- data.full[!(data.full$Site=="BCI"),]
-          model.2pr <- lme4::lmer(b1.iso~log(DBH) + log(HOM) + (1|Site), data = data.full)
-            model.2pr.int <- summary(model.2pr)$coefficients[1,1]
-            model.2pr.dbh <- summary(model.2pr)$coefficients[2,1]
-            model.2pr.hom <- summary(model.2pr)$coefficients[3,1]
-          data.site$b <- model.2pr.int + model.2pr.dbh*log(data.site$DBH) + model.2pr.hom*log(data.site$HOM)
-
-          data.site$EDBH <- taper.eqn(d = data.site$DBH,
-                                      h = data.site$HOM,
-                                      b1 = data.site$b)
-          data.site$AGB <- agb.allometry(E = data.site$E,
-                                         wsg = data.site$WSG,
-                                         dbh = data.site$EDBH)
-          AGB_BCI$AGB_Cross2Pr[i] <- sum(data.site$AGB)
-          
-          # "Median" taper value--tree where half of AGB is from smaller trees
-          data.LOO <- data.LOO[order(data.LOO$AGB_Sort),]
-          data.LOO$CmAGB <- NA
-          for(j in 1:dim(data.LOO)[1]){
-            data.LOO$CmAGB[j] <- sum(data.LOO$AGB_Sort[1:j])
-          }
-          
-          medDBH <- data.LOO[data.LOO$CmAGB > sum(data.LOO$AGB_MeasTaper)/2,"DBH"][1]
-          model.DAB <- lm(b1.iso~log(DBH), data = data.LOO)
-          b_med <- predict(model.DAB, newdata = data.frame(DBH = medDBH))
-          data.site$EDBH <- taper.eqn(d = data.site$DBH,
-                                      h = data.site$HOM,
-                                      b1 = b_med)
-          data.site$AGB <- agb.allometry(E = data.site$E,
-                                         wsg = data.site$WSG,
-                                         dbh = data.site$EDBH)
-          AGB_BCI$AGB_CrossMed[i] <- sum(data.site$AGB)
-          AGB_BCI$b_med[i] <- b_med
-        }
-
-    # Bukit Timah
-    
-        AGB_BKT <- data.frame(sample = 1:nboot,
-                          AGB_FullModel = NA,
-                          AGB_Cross3Pr = NA,
-                          AGB_Cross2Pr = NA,
-                          AGB_CrossMed = NA,
-                          b_med = NA)
-        
-        set.seed(1)
-        for(i in 1:nboot){
-          data.site <- TaperSample[TaperSample$Site=="BKT",]
-          
-          # Full taper model
-          sample.full <- sample(x = 1:dim(TaperSample)[1],
-                                size = dim(TaperSample)[1],
-                                replace = T)
-          data.full <- TaperSample[sample.full,]
-          model.full <- lme4::lmer(b1.iso~log(DBH) + log(HOM) + log(WSG) + (1|Site), data = data.full)
-          data.site$b <- predict(model.full, newdata = data.site)
-          data.site$EDBH <- taper.eqn(d = data.site$DBH,
-                                      h = data.site$HOM,
-                                      b1 = data.site$b)
-          data.site$AGB <- agb.allometry(E = data.site$E,
-                                         wsg = data.site$WSG,
-                                         dbh = data.site$EDBH)
-          AGB_BKT$AGB_FullModel[i] <- sum(data.site$AGB)
-          
-          # 3-parameter cross-validation
-          data.LOO <- data.full[!(data.full$Site=="BKT"),]
-          model.3pr <- lme4::lmer(b1.iso~log(DBH) + log(HOM) + log(WSG) + (1|Site), data = data.full)
-            model.3pr.int <- summary(model.3pr)$coefficients[1,1]
-            model.3pr.dbh <- summary(model.3pr)$coefficients[2,1]
-            model.3pr.hom <- summary(model.3pr)$coefficients[3,1]
-            model.3pr.wsg <- summary(model.3pr)$coefficients[4,1]
-          data.site$b <- model.3pr.int + model.3pr.dbh*log(data.site$DBH) + model.3pr.hom*log(data.site$HOM) + model.3pr.wsg*log(data.site$WSG)
-
-          data.site$EDBH <- taper.eqn(d = data.site$DBH,
-                                      h = data.site$HOM,
-                                      b1 = data.site$b)
-          data.site$AGB <- agb.allometry(E = data.site$E,
-                                         wsg = data.site$WSG,
-                                         dbh = data.site$EDBH)
-          AGB_BKT$AGB_Cross3Pr[i] <- sum(data.site$AGB)
-          
-          # 2-parameter cross-validation
-          data.LOO <- data.full[!(data.full$Site=="BKT"),]
-          model.2pr <- lme4::lmer(b1.iso~log(DBH) + log(HOM) + (1|Site), data = data.full)
-            model.2pr.int <- summary(model.2pr)$coefficients[1,1]
-            model.2pr.dbh <- summary(model.2pr)$coefficients[2,1]
-            model.2pr.hom <- summary(model.2pr)$coefficients[3,1]
-          data.site$b <- model.2pr.int + model.2pr.dbh*log(data.site$DBH) + model.2pr.hom*log(data.site$HOM)
-
-          data.site$EDBH <- taper.eqn(d = data.site$DBH,
-                                      h = data.site$HOM,
-                                      b1 = data.site$b)
-          data.site$AGB <- agb.allometry(E = data.site$E,
-                                         wsg = data.site$WSG,
-                                         dbh = data.site$EDBH)
-          AGB_BKT$AGB_Cross2Pr[i] <- sum(data.site$AGB)
-          
-          # "Median" taper value--tree where half of AGB is from smaller trees
-          data.LOO <- data.LOO[order(data.LOO$AGB_Sort),]
-          data.LOO$CmAGB <- NA
-          for(j in 1:dim(data.LOO)[1]){
-            data.LOO$CmAGB[j] <- sum(data.LOO$AGB_Sort[1:j])
-          }
-          
-          medDBH <- data.LOO[data.LOO$CmAGB > sum(data.LOO$AGB_MeasTaper)/2,"DBH"][1]
-          model.DAB <- lm(b1.iso~log(DBH), data = data.LOO)
-          b_med <- predict(model.DAB, newdata = data.frame(DBH = medDBH))
-          data.site$EDBH <- taper.eqn(d = data.site$DBH,
-                                      h = data.site$HOM,
-                                      b1 = b_med)
-          data.site$AGB <- agb.allometry(E = data.site$E,
-                                         wsg = data.site$WSG,
-                                         dbh = data.site$EDBH)
-          AGB_BKT$AGB_CrossMed[i] <- sum(data.site$AGB)
-          AGB_BKT$b_med[i] <- b_med
-        }  
-        
-    # Huai Kha Khaeng
-    
-        AGB_HKK <- data.frame(sample = 1:nboot,
-                          AGB_FullModel = NA,
-                          AGB_Cross3Pr = NA,
-                          AGB_Cross2Pr = NA,
-                          AGB_CrossMed = NA,
-                          b_med = NA)
-        
-        set.seed(1)
-        for(i in 1:nboot){
-          data.site <- TaperSample[TaperSample$Site=="HKK",]
-          
-          # Full taper model
-          sample.full <- sample(x = 1:dim(TaperSample)[1],
-                                size = dim(TaperSample)[1],
-                                replace = T)
-          data.full <- TaperSample[sample.full,]
-          model.full <- lme4::lmer(b1.iso~log(DBH) + log(HOM) + log(WSG) + (1|Site), data = data.full)
-          data.site$b <- predict(model.full, newdata = data.site)
-          data.site$EDBH <- taper.eqn(d = data.site$DBH,
-                                      h = data.site$HOM,
-                                      b1 = data.site$b)
-          data.site$AGB <- agb.allometry(E = data.site$E,
-                                         wsg = data.site$WSG,
-                                         dbh = data.site$EDBH)
-          AGB_HKK$AGB_FullModel[i] <- sum(data.site$AGB)
-          
-          # 3-parameter cross-validation
-          data.LOO <- data.full[!(data.full$Site=="HKK"),]
-          model.3pr <- lme4::lmer(b1.iso~log(DBH) + log(HOM) + log(WSG) + (1|Site), data = data.full)
-            model.3pr.int <- summary(model.3pr)$coefficients[1,1]
-            model.3pr.dbh <- summary(model.3pr)$coefficients[2,1]
-            model.3pr.hom <- summary(model.3pr)$coefficients[3,1]
-            model.3pr.wsg <- summary(model.3pr)$coefficients[4,1]
-          data.site$b <- model.3pr.int + model.3pr.dbh*log(data.site$DBH) + model.3pr.hom*log(data.site$HOM) + model.3pr.wsg*log(data.site$WSG)
-
-          data.site$EDBH <- taper.eqn(d = data.site$DBH,
-                                      h = data.site$HOM,
-                                      b1 = data.site$b)
-          data.site$AGB <- agb.allometry(E = data.site$E,
-                                         wsg = data.site$WSG,
-                                         dbh = data.site$EDBH)
-          AGB_HKK$AGB_Cross3Pr[i] <- sum(data.site$AGB)
-          
-          # 2-parameter cross-validation
-          data.LOO <- data.full[!(data.full$Site=="HKK"),]
-          model.2pr <- lme4::lmer(b1.iso~log(DBH) + log(HOM) + (1|Site), data = data.full)
-            model.2pr.int <- summary(model.2pr)$coefficients[1,1]
-            model.2pr.dbh <- summary(model.2pr)$coefficients[2,1]
-            model.2pr.hom <- summary(model.2pr)$coefficients[3,1]
-          data.site$b <- model.2pr.int + model.2pr.dbh*log(data.site$DBH) + model.2pr.hom*log(data.site$HOM)
-
-          data.site$EDBH <- taper.eqn(d = data.site$DBH,
-                                      h = data.site$HOM,
-                                      b1 = data.site$b)
-          data.site$AGB <- agb.allometry(E = data.site$E,
-                                         wsg = data.site$WSG,
-                                         dbh = data.site$EDBH)
-          AGB_HKK$AGB_Cross2Pr[i] <- sum(data.site$AGB)
-          
-          # "Median" taper value--tree where half of AGB is from smaller trees
-          data.LOO <- data.LOO[order(data.LOO$AGB_Sort),]
-          data.LOO$CmAGB <- NA
-          for(j in 1:dim(data.LOO)[1]){
-            data.LOO$CmAGB[j] <- sum(data.LOO$AGB_Sort[1:j])
-          }
-          
-          medDBH <- data.LOO[data.LOO$CmAGB > sum(data.LOO$AGB_MeasTaper)/2,"DBH"][1]
-          model.DAB <- lm(b1.iso~log(DBH), data = data.LOO)
-          b_med <- predict(model.DAB, newdata = data.frame(DBH = medDBH))
-          data.site$EDBH <- taper.eqn(d = data.site$DBH,
-                                      h = data.site$HOM,
-                                      b1 = b_med)
-          data.site$AGB <- agb.allometry(E = data.site$E,
-                                         wsg = data.site$WSG,
-                                         dbh = data.site$EDBH)
-          AGB_HKK$AGB_CrossMed[i] <- sum(data.site$AGB)
-          AGB_HKK$b_med[i] <- b_med
-        }  
-        
-    # Khao Chong
-    
-        AGB_KCH <- data.frame(sample = 1:nboot,
-                          AGB_FullModel = NA,
-                          AGB_Cross3Pr = NA,
-                          AGB_Cross2Pr = NA,
-                          AGB_CrossMed = NA,
-                          b_med = NA)
-        
-        set.seed(1)
-        for(i in 1:nboot){
-          data.site <- TaperSample[TaperSample$Site=="KCH",]
-          
-          # Full taper model
-          sample.full <- sample(x = 1:dim(TaperSample)[1],
-                                size = dim(TaperSample)[1],
-                                replace = T)
-          data.full <- TaperSample[sample.full,]
-          model.full <- lme4::lmer(b1.iso~log(DBH) + log(HOM) + log(WSG) + (1|Site), data = data.full)
-          data.site$b <- predict(model.full, newdata = data.site)
-          data.site$EDBH <- taper.eqn(d = data.site$DBH,
-                                      h = data.site$HOM,
-                                      b1 = data.site$b)
-          data.site$AGB <- agb.allometry(E = data.site$E,
-                                         wsg = data.site$WSG,
-                                         dbh = data.site$EDBH)
-          AGB_KCH$AGB_FullModel[i] <- sum(data.site$AGB)
-          
-          # 3-parameter cross-validation
-          data.LOO <- data.full[!(data.full$Site=="KCH"),]
-          model.3pr <- lme4::lmer(b1.iso~log(DBH) + log(HOM) + log(WSG) + (1|Site), data = data.full)
-            model.3pr.int <- summary(model.3pr)$coefficients[1,1]
-            model.3pr.dbh <- summary(model.3pr)$coefficients[2,1]
-            model.3pr.hom <- summary(model.3pr)$coefficients[3,1]
-            model.3pr.wsg <- summary(model.3pr)$coefficients[4,1]
-          data.site$b <- model.3pr.int + model.3pr.dbh*log(data.site$DBH) + model.3pr.hom*log(data.site$HOM) + model.3pr.wsg*log(data.site$WSG)
-
-          data.site$EDBH <- taper.eqn(d = data.site$DBH,
-                                      h = data.site$HOM,
-                                      b1 = data.site$b)
-          data.site$AGB <- agb.allometry(E = data.site$E,
-                                         wsg = data.site$WSG,
-                                         dbh = data.site$EDBH)
-          AGB_KCH$AGB_Cross3Pr[i] <- sum(data.site$AGB)
-          
-          # 2-parameter cross-validation
-          data.LOO <- data.full[!(data.full$Site=="KCH"),]
-          model.2pr <- lme4::lmer(b1.iso~log(DBH) + log(HOM) + (1|Site), data = data.full)
-            model.2pr.int <- summary(model.2pr)$coefficients[1,1]
-            model.2pr.dbh <- summary(model.2pr)$coefficients[2,1]
-            model.2pr.hom <- summary(model.2pr)$coefficients[3,1]
-          data.site$b <- model.2pr.int + model.2pr.dbh*log(data.site$DBH) + model.2pr.hom*log(data.site$HOM)
-
-          data.site$EDBH <- taper.eqn(d = data.site$DBH,
-                                      h = data.site$HOM,
-                                      b1 = data.site$b)
-          data.site$AGB <- agb.allometry(E = data.site$E,
-                                         wsg = data.site$WSG,
-                                         dbh = data.site$EDBH)
-          AGB_KCH$AGB_Cross2Pr[i] <- sum(data.site$AGB)
-          
-          # "Median" taper value--tree where half of AGB is from smaller trees
-          data.LOO <- data.LOO[order(data.LOO$AGB_Sort),]
-          data.LOO$CmAGB <- NA
-          for(j in 1:dim(data.LOO)[1]){
-            data.LOO$CmAGB[j] <- sum(data.LOO$AGB_Sort[1:j])
-          }
-          
-          medDBH <- data.LOO[data.LOO$CmAGB > sum(data.LOO$AGB_MeasTaper)/2,"DBH"][1]
-          model.DAB <- lm(b1.iso~log(DBH), data = data.LOO)
-          b_med <- predict(model.DAB, newdata = data.frame(DBH = medDBH))
-          data.site$EDBH <- taper.eqn(d = data.site$DBH,
-                                      h = data.site$HOM,
-                                      b1 = b_med)
-          data.site$AGB <- agb.allometry(E = data.site$E,
-                                         wsg = data.site$WSG,
-                                         dbh = data.site$EDBH)
-          AGB_KCH$AGB_CrossMed[i] <- sum(data.site$AGB)
-          AGB_KCH$b_med[i] <- b_med
-        }  
-        
-  # Summarize results
-    AGB_list <- list(AGB_AMA, AGB_BCI, AGB_BKT, AGB_HKK, AGB_KCH)    
-    
-    AGB_Results <- data.frame(site=sites,
-                              AGB_Uncorrected=NA,
-                              AGB_MeasTaper=NA,
-                              AGB_FullModel_Mean=NA,
-                              AGB_FullModel_Min95=NA,
-                              AGB_FullModel_Max95=NA,
-                              AGB_Cross3Pr_Mean=NA,
-                              AGB_Cross3Pr_Min95=NA,
-                              AGB_Cross3Pr_Max95=NA,
-                              AGB_Cross2Pr_Mean=NA,
-                              AGB_Cross2Pr_Min95=NA,
-                              AGB_Cross2Pr_Max95=NA,
-                              AGB_CrossMed_Mean=NA,
-                              AGB_CrossMed_Min95=NA,
-                              AGB_CrossMed_Max95=NA,
-                              AGB_MeasTaper_Std=NA,
-                              AGB_FullModel_Mean_Std=NA,
-                              AGB_FullModel_Min95_Std=NA,
-                              AGB_FullModel_Max95_Std=NA,
-                              AGB_Cross3Pr_Mean_Std=NA,
-                              AGB_Cross3Pr_Min95_Std=NA,
-                              AGB_Cross3Pr_Max95_Std=NA,
-                              AGB_Cross2Pr_Mean_Std=NA,
-                              AGB_Cross2Pr_Min95_Std=NA,
-                              AGB_Cross2Pr_Max95_Std=NA,
-                              AGB_CrossMed_Mean_Std=NA,
-                              AGB_CrossMed_Min95_Std=NA,
-                              AGB_CrossMed_Max95_Std=NA)
-    
-    for(i in 1:length(sites)){
-      AGB_Results$AGB_Uncorrected[i] <- sum(TaperSample[TaperSample$Site==sites[i],"AGB_Uncorected"])
-      AGB_Results$AGB_MeasTaper[i] <- sum(TaperSample[TaperSample$Site==sites[i],"AGB_MeasTaper"])
-      AGB_Results$AGB_FullModel_Mean[i] <- mean(AGB_list[[i]]$AGB_FullModel)
-      AGB_Results$AGB_FullModel_Min95[i] <- quantile((AGB_list[[i]]$AGB_FullModel), 0.025)
-      AGB_Results$AGB_FullModel_Max95[i] <- quantile((AGB_list[[i]]$AGB_FullModel), 0.975)
-      AGB_Results$AGB_Cross3Pr_Mean[i] <- mean(AGB_list[[i]]$AGB_Cross3Pr)
-      AGB_Results$AGB_Cross3Pr_Min95[i] <- quantile((AGB_list[[i]]$AGB_Cross3Pr), 0.025)
-      AGB_Results$AGB_Cross3Pr_Max95[i] <- quantile((AGB_list[[i]]$AGB_Cross3Pr), 0.975)
-      AGB_Results$AGB_Cross2Pr_Mean[i] <- mean(AGB_list[[i]]$AGB_Cross2Pr)
-      AGB_Results$AGB_Cross2Pr_Min95[i] <- quantile((AGB_list[[i]]$AGB_Cross2Pr), 0.025)
-      AGB_Results$AGB_Cross2Pr_Max95[i] <- quantile((AGB_list[[i]]$AGB_Cross2Pr), 0.975)
-      AGB_Results$AGB_CrossMed_Mean[i] <- mean(AGB_list[[i]]$AGB_CrossMed)
-      AGB_Results$AGB_CrossMed_Min95[i] <- quantile((AGB_list[[i]]$AGB_CrossMed), 0.025)
-      AGB_Results$AGB_CrossMed_Max95[i] <- quantile((AGB_list[[i]]$AGB_CrossMed), 0.975)
-    }
-    
-    # Calculate standardized values -- compared to uncorrected data
-      AGB_Results$AGB_MeasTaper_Std <- AGB_Results$AGB_MeasTaper/AGB_Results$AGB_Uncorrected
-      AGB_Results$AGB_FullModel_Mean_Std <- AGB_Results$AGB_FullModel_Mean/AGB_Results$AGB_Uncorrected
-      AGB_Results$AGB_FullModel_Min95_Std <- AGB_Results$AGB_FullModel_Min95/AGB_Results$AGB_Uncorrected
-      AGB_Results$AGB_FullModel_Max95_Std <- AGB_Results$AGB_FullModel_Max95/AGB_Results$AGB_Uncorrected
-      AGB_Results$AGB_Cross3Pr_Mean_Std <- AGB_Results$AGB_Cross3Pr_Mean/AGB_Results$AGB_Uncorrected
-      AGB_Results$AGB_Cross3Pr_Min95_Std <- AGB_Results$AGB_Cross3Pr_Min95/AGB_Results$AGB_Uncorrected
-      AGB_Results$AGB_Cross3Pr_Max95_Std <- AGB_Results$AGB_Cross3Pr_Max95/AGB_Results$AGB_Uncorrected
-      AGB_Results$AGB_Cross2Pr_Mean_Std <- AGB_Results$AGB_Cross2Pr_Mean/AGB_Results$AGB_Uncorrected
-      AGB_Results$AGB_Cross2Pr_Min95_Std <- AGB_Results$AGB_Cross2Pr_Min95/AGB_Results$AGB_Uncorrected
-      AGB_Results$AGB_Cross2Pr_Max95_Std <- AGB_Results$AGB_Cross2Pr_Max95/AGB_Results$AGB_Uncorrected
-      AGB_Results$AGB_CrossMed_Mean_Std <- AGB_Results$AGB_CrossMed_Mean/AGB_Results$AGB_Uncorrected
-      AGB_Results$AGB_CrossMed_Min95_Std <- AGB_Results$AGB_CrossMed_Min95/AGB_Results$AGB_Uncorrected
-      AGB_Results$AGB_CrossMed_Max95_Std <- AGB_Results$AGB_CrossMed_Max95/AGB_Results$AGB_Uncorrected
-
-      # Mean, min, max from applying taper correction
-      mean(100*abs(AGB_Results$AGB_Uncorrected-AGB_Results$AGB_MeasTaper)/AGB_Results$AGB_Uncorrected)
-      min(100*abs(AGB_Results$AGB_Uncorrected-AGB_Results$AGB_MeasTaper)/AGB_Results$AGB_Uncorrected)
-      max(100*abs(AGB_Results$AGB_Uncorrected-AGB_Results$AGB_MeasTaper)/AGB_Results$AGB_Uncorrected)
-
-      # Mean, min, max from applying Model 1
-      mean(100*abs(AGB_Results$AGB_FullModel_Mean-AGB_Results$AGB_MeasTaper)/AGB_Results$AGB_MeasTaper)
-      min(100*abs(AGB_Results$AGB_FullModel_Mean-AGB_Results$AGB_MeasTaper)/AGB_Results$AGB_MeasTaper)
-      max(100*abs(AGB_Results$AGB_FullModel_Mean-AGB_Results$AGB_MeasTaper)/AGB_Results$AGB_MeasTaper)
-      
-      # Mean, min, max from applying cross-validated model with 3 parameters
-      mean(100*abs(AGB_Results$AGB_Cross3Pr_Mean-AGB_Results$AGB_MeasTaper)/AGB_Results$AGB_MeasTaper)
-      min(100*abs(AGB_Results$AGB_Cross3Pr_Mean-AGB_Results$AGB_MeasTaper)/AGB_Results$AGB_MeasTaper)
-      max(100*abs(AGB_Results$AGB_Cross3Pr_Mean-AGB_Results$AGB_MeasTaper)/AGB_Results$AGB_MeasTaper)
-
-      # Mean, min, max from applying cross-validated model with 2 parameters
-      mean(100*abs(AGB_Results$AGB_Cross2Pr_Mean-AGB_Results$AGB_MeasTaper)/AGB_Results$AGB_MeasTaper)
-      min(100*abs(AGB_Results$AGB_Cross2Pr_Mean-AGB_Results$AGB_MeasTaper)/AGB_Results$AGB_MeasTaper)
-      max(100*abs(AGB_Results$AGB_Cross2Pr_Mean-AGB_Results$AGB_MeasTaper)/AGB_Results$AGB_MeasTaper)
-
-      # Mean, min, max from applying cross-validated model with 2 parameters
-      mean(100*abs(AGB_Results$AGB_CrossMed_Mean-AGB_Results$AGB_MeasTaper)/AGB_Results$AGB_MeasTaper)
-      min(100*abs(AGB_Results$AGB_CrossMed_Mean-AGB_Results$AGB_MeasTaper)/AGB_Results$AGB_MeasTaper)
-      max(100*abs(AGB_Results$AGB_CrossMed_Mean-AGB_Results$AGB_MeasTaper)/AGB_Results$AGB_MeasTaper)
-
-      
-      write.csv(AGB_Results, file="DataFile_BiomassEstimates.csv", row.names = F)
+    write.csv(CircBySite, file="ResultsFiles/TableS6_CircVariationTable.csv")
