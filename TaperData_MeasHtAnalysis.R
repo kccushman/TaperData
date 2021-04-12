@@ -1,3 +1,8 @@
+## NOTE:Full census data for each plot are NOT publicly available. 
+##      Code is provided to document statistical tests used.
+##      Plot data request information can be found on the ForestGEO website: 
+##        https://forestgeo.si.edu/explore-data
+
 # Load species list of figs so the stranglers can be omitted
   FigList <- read.csv("~/Desktop/Taper/Current/RawCensusData_CTFS/all.fig.sp.csv")
   StranglerFigs <- FigList[FigList$Strangler=="Yes","Mnemonic"]
@@ -802,46 +807,3 @@
   
 #### 7. Save formatted census data ####
 save(AMA.cens,BCI.cens,BKT.cens,HKK.cens,KCH.cens,file="ForestGEO_CensusData.RData")
-
-#### Revision edit: Look at first interval for BCI ####
-  # 1990-1995
-  HOMchange <- BCI.cens[[1]]
-  HOMchange <- HOMchange[!duplicated(HOMchange$StemID),]
-  HOMchange <- merge(x = HOMchange, y = BCI.cens[[2]][!duplicated(BCI.cens[[2]]$StemID),c("StemID","dbh","hom")],
-                     by = "StemID", all.x = T, all.y = T)
-  
-  HOMchange$dHOM <- HOMchange$hom.y-HOMchange$hom.x
-  hist(HOMchange[HOMchange$dHOM>0,"dHOM"], breaks=seq(-12,6,0.2), col="black",border="white",
-       main="1990 - 1995 HOM increases",xlab="HOM change (m)",
-       xlim=c(0,6),ylim=c(0,160))
-  weighted.mean(x = HOMchange$dHOM, w = HOMchange$AGB, na.rm=T)
-
-  #1995-2000
-  HOMchange <- BCI.cens[[2]]
-  HOMchange <- HOMchange[!duplicated(HOMchange$StemID),]
-  HOMchange <- merge(x = HOMchange, y = BCI.cens[[3]][!duplicated(BCI.cens[[3]]$StemID),c("StemID","dbh","hom")],
-                     by = "StemID", all.x = T, all.y = T)
-  
-  HOMchange$dHOM <- HOMchange$hom.y-HOMchange$hom.x
-  hist(HOMchange[HOMchange$dHOM>0,"dHOM"], breaks=seq(-12,6,0.2), col="black",border="white",
-       main="1995 - 2000 HOM increases",xlab="HOM change (m)",
-       xlim=c(0,6),ylim=c(0,160))
-  HOMchange[HOMchange$dHOM>3 & !is.na(HOMchange$dHOM),]
-  weighted.mean(x = HOMchange$dHOM, w = HOMchange$AGB, na.rm=T)
-  
-  #2000-2005
-  HOMchange <- BCI.cens[[3]]
-  HOMchange <- HOMchange[!duplicated(HOMchange$StemID),]
-  HOMchange <- merge(x = HOMchange, y = BCI.cens[[4]][!duplicated(BCI.cens[[4]]$StemID),c("StemID","dbh","hom")],
-                     by = "StemID", all.x = T, all.y = T)
-  
-  HOMchange$dHOM <- HOMchange$hom.y-HOMchange$hom.x
-  hist(HOMchange[HOMchange$dHOM>0,"dHOM"], breaks=seq(-12,6,0.2), col="black",border="white",
-       main="2000 - 2005 HOM increases",xlab="HOM change (m)",
-       xlim=c(0,6),ylim=c(0,160))
-  HOMchange[HOMchange$dHOM>3 & !is.na(HOMchange$dHOM),]
-  weighted.mean(x = HOMchange$dHOM, w = HOMchange$AGB, na.rm=T)
-  
-  weighted.mean(x = BCI.cens[[2]][!duplicated(BCI.cens[[2]]$StemID),"hom"],
-                w = BCI.cens[[2]][!duplicated(BCI.cens[[2]]$StemID),"AGB"])
-  
