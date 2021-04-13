@@ -520,29 +520,29 @@
       AGB_Results$AGB_CrossMed_Max95_Std <- AGB_Results$AGB_CrossMed_Max95/AGB_Results$AGB_Uncorrected
 
       # Mean, min, max from applying taper correction
-      mean(100*abs(AGB_Results$AGB_Uncorrected-AGB_Results$AGB_MeasTaper)/AGB_Results$AGB_Uncorrected)
-      min(100*abs(AGB_Results$AGB_Uncorrected-AGB_Results$AGB_MeasTaper)/AGB_Results$AGB_Uncorrected)
-      max(100*abs(AGB_Results$AGB_Uncorrected-AGB_Results$AGB_MeasTaper)/AGB_Results$AGB_Uncorrected)
+      round(mean(100*abs(AGB_Results$AGB_Uncorrected-AGB_Results$AGB_MeasTaper)/AGB_Results$AGB_Uncorrected),1)
+      round(min(100*abs(AGB_Results$AGB_Uncorrected-AGB_Results$AGB_MeasTaper)/AGB_Results$AGB_Uncorrected),1)
+      round(max(100*abs(AGB_Results$AGB_Uncorrected-AGB_Results$AGB_MeasTaper)/AGB_Results$AGB_Uncorrected),1)
 
       # Mean, min, max from applying Model 1
-      mean(100*abs(AGB_Results$AGB_FullModel_Mean-AGB_Results$AGB_MeasTaper)/AGB_Results$AGB_MeasTaper)
-      min(100*abs(AGB_Results$AGB_FullModel_Mean-AGB_Results$AGB_MeasTaper)/AGB_Results$AGB_MeasTaper)
-      max(100*abs(AGB_Results$AGB_FullModel_Mean-AGB_Results$AGB_MeasTaper)/AGB_Results$AGB_MeasTaper)
+      round(mean(100*abs(AGB_Results$AGB_FullModel_Mean-AGB_Results$AGB_MeasTaper)/AGB_Results$AGB_MeasTaper),1)
+      round(min(100*abs(AGB_Results$AGB_FullModel_Mean-AGB_Results$AGB_MeasTaper)/AGB_Results$AGB_MeasTaper),1)
+      round(max(100*abs(AGB_Results$AGB_FullModel_Mean-AGB_Results$AGB_MeasTaper)/AGB_Results$AGB_MeasTaper),1)
       
       # Mean, min, max from applying cross-validated model with 3 parameters
-      mean(100*abs(AGB_Results$AGB_Cross3Pr_Mean-AGB_Results$AGB_MeasTaper)/AGB_Results$AGB_MeasTaper)
-      min(100*abs(AGB_Results$AGB_Cross3Pr_Mean-AGB_Results$AGB_MeasTaper)/AGB_Results$AGB_MeasTaper)
-      max(100*abs(AGB_Results$AGB_Cross3Pr_Mean-AGB_Results$AGB_MeasTaper)/AGB_Results$AGB_MeasTaper)
+      round(mean(100*abs(AGB_Results$AGB_Cross3Pr_Mean-AGB_Results$AGB_MeasTaper)/AGB_Results$AGB_MeasTaper),1)
+      round(min(100*abs(AGB_Results$AGB_Cross3Pr_Mean-AGB_Results$AGB_MeasTaper)/AGB_Results$AGB_MeasTaper),1)
+      round(max(100*abs(AGB_Results$AGB_Cross3Pr_Mean-AGB_Results$AGB_MeasTaper)/AGB_Results$AGB_MeasTaper),1)
 
       # Mean, min, max from applying cross-validated model with 2 parameters
-      mean(100*abs(AGB_Results$AGB_Cross2Pr_Mean-AGB_Results$AGB_MeasTaper)/AGB_Results$AGB_MeasTaper)
-      min(100*abs(AGB_Results$AGB_Cross2Pr_Mean-AGB_Results$AGB_MeasTaper)/AGB_Results$AGB_MeasTaper)
-      max(100*abs(AGB_Results$AGB_Cross2Pr_Mean-AGB_Results$AGB_MeasTaper)/AGB_Results$AGB_MeasTaper)
+      round(mean(100*abs(AGB_Results$AGB_Cross2Pr_Mean-AGB_Results$AGB_MeasTaper)/AGB_Results$AGB_MeasTaper),1)
+      round(min(100*abs(AGB_Results$AGB_Cross2Pr_Mean-AGB_Results$AGB_MeasTaper)/AGB_Results$AGB_MeasTaper),1)
+      round(max(100*abs(AGB_Results$AGB_Cross2Pr_Mean-AGB_Results$AGB_MeasTaper)/AGB_Results$AGB_MeasTaper),1)
 
       # Mean, min, max from applying cross-validated model with 2 parameters
-      mean(100*abs(AGB_Results$AGB_CrossMed_Mean-AGB_Results$AGB_MeasTaper)/AGB_Results$AGB_MeasTaper)
-      min(100*abs(AGB_Results$AGB_CrossMed_Mean-AGB_Results$AGB_MeasTaper)/AGB_Results$AGB_MeasTaper)
-      max(100*abs(AGB_Results$AGB_CrossMed_Mean-AGB_Results$AGB_MeasTaper)/AGB_Results$AGB_MeasTaper)
+      round(mean(100*abs(AGB_Results$AGB_CrossMed_Mean-AGB_Results$AGB_MeasTaper)/AGB_Results$AGB_MeasTaper),1)
+      round(min(100*abs(AGB_Results$AGB_CrossMed_Mean-AGB_Results$AGB_MeasTaper)/AGB_Results$AGB_MeasTaper),1)
+      round(max(100*abs(AGB_Results$AGB_CrossMed_Mean-AGB_Results$AGB_MeasTaper)/AGB_Results$AGB_MeasTaper),1)
 
 #### Save results ####  
       
