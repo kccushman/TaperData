@@ -1,4 +1,5 @@
-# Make figures for taper data paper
+# Use 'groundhog' package to use versions of packages at time of publication
+groundhog::groundhog.library(c("cowplot","lme4"),"2020-12-20")
 
 #### Make vectors of site abbreviates, names, and colors ####
 
@@ -177,7 +178,7 @@
   dev.off()  
 
 #### Figure 4: Compare biomass estimates from different taper models ####
-  AGB_Results <- read.csv("DataFile_BiomassEstimates.csv")
+  AGB_Results <- read.csv("ResultsFiles/BiomassEstimates.csv")
   
   tiff(file="Figure4_BiomassEstimates.tiff",width=6,height=4, units="in", res=400, family = "sans")
 
