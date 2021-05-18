@@ -21,11 +21,11 @@ groundhog::groundhog.library(c("cowplot","lme4"),"2020-12-20")
   site.cols$col <- as.character(site.cols$col)
 
 #### Figure 2: Violin plots for circularity and taper for each site #####
-    CircSample <- read.csv("DataFile_CircSample.csv")
-    CircBySite <- read.csv("CircVariationTable.csv")
+    CircSample <- read.csv("DataFiles/DataFile_CircSample.csv")
+    CircBySite <- read.csv("ResultsFiles/TableS6_CircVariationTable.csv")
     
-    TaperSample <- read.csv("DataFile_TaperParameterSample.csv")
-    TaperBySite <- read.csv("TaperVariationTable.csv")
+    TaperSample <- read.csv("DataFiles/DataFile_TaperParameterSample.csv")
+    TaperBySite <- read.csv("ResultsFiles/Table3_TaperVariationBySite.csv")
     
     library(ggplot2)
 
@@ -39,8 +39,6 @@ groundhog::groundhog.library(c("cowplot","lme4"),"2020-12-20")
               axis.text.x=element_blank(),
               axis.title.x=element_blank(),
               axis.ticks.x=element_blank()) + 
-        #geom_point(data=CircBySite,aes(x=Site, y = Mean), colour="white", shape=17, show.legend=F) + 
-        #geom_point(data=CircBySite,aes(x=Site, y = Mean.BA), colour="white", shape=15, show.legend=F) +
         geom_point(data=CircBySite,aes(x=Site, y = Mean.AGB), colour="white", shape=16, show.legend=F) +
         geom_hline(yintercept = 1, linetype="dashed", color= "black")
 
@@ -55,11 +53,9 @@ groundhog::groundhog.library(c("cowplot","lme4"),"2020-12-20")
               axis.text.x=element_blank(),
               axis.title.x=element_blank(),
               axis.ticks.x=element_blank()) + 
-        #geom_point(data=TaperBySite,aes(x=Site, y = Mean), colour="white", shape=17, show.legend=F) + 
-        #geom_point(data=TaperBySite,aes(x=Site, y = Mean.BA), colour="white", shape=15, show.legend=F) +
         geom_point(data=TaperBySite,aes(x=Site, y = Mean.AGB), colour="white", shape=16, show.legend=F)
       
-    pdf(width=4.5, height=5, file="Figure2_CircularityTaperViolins.pdf")
+    pdf(width=4.5, height=5, file="Figure_2.pdf")
       
      par(xpd=F,family="sans", mfrow=c(1,1), las=1, oma=c(1,4,0,3), mar=c(3,4,1,1))  
      
@@ -89,7 +85,7 @@ groundhog::groundhog.library(c("cowplot","lme4"),"2020-12-20")
   
   model3a <- lme4::lmer(b1.iso~log(DBH) + log(HOM) + log(WSG) + (1|Site), data = TaperSample)
 
-  tiff(file="Figure3_TaperParameterVariation.tiff", height=3, width=8, units="in", res=300)
+  pdf(file="Figure_3.pdf", height=3, width=8)
     par(mfrow=c(1,3), mar=c(4,2,0,0), xpd=F,family="sans", las=1, oma=c(0,5,1,1))
 
     plot(b1.iso~DBH, data=TaperSample, type='n',
@@ -180,7 +176,7 @@ groundhog::groundhog.library(c("cowplot","lme4"),"2020-12-20")
 #### Figure 4: Compare biomass estimates from different taper models ####
   AGB_Results <- read.csv("ResultsFiles/BiomassEstimates.csv")
   
-  tiff(file="Figure4_BiomassEstimates.tiff",width=6,height=4, units="in", res=400, family = "sans")
+  pdf(file="Figure_4.pdf",width=6,height=4,family = "sans")
 
     par(mfrow=c(1,1), mar=c(3,3,1,1),oma=c(1,1,1,1), family="sans", xpd=F, las=1)
         
@@ -250,7 +246,7 @@ groundhog::groundhog.library(c("cowplot","lme4"),"2020-12-20")
     
   dev.off()
 #### Figure 5: Proportion of stems measured at nonstandard heights over time at each plot ####
-  HOM.results <- read.csv("Data file_HOMresultsPerPlot.csv")
+  HOM.results <- read.csv("DataFiles/Data file_HOMresultsPerPlot.csv")
   
   axisSize <- 0.9
   cexAx <- 1.1
@@ -258,7 +254,7 @@ groundhog::groundhog.library(c("cowplot","lme4"),"2020-12-20")
   ptSize <- 0.8
   pchSig <- c(19,19,19,19,19)
   
-  tiff(file="Figure5_MeasHtChangesOverTime.tiff",width=3,height=6, units="in", res=300, family = "sans")
+  pdf(file="Figure_5.pdf",width=3,height=6, family = "sans")
 
     par(mfrow=c(3,1), mar=c(1,3,1,1),oma=c(2,1,0,0), family="sans", xpd=F, las=1)
     

@@ -63,9 +63,7 @@
 ###### Table S7:Circularity values by family #####
   # Make a data frame with trees with circularity measurement at the HOM
   CircSample <- TreeSample[!is.na(TreeSample$iso),]
-    
-  # Are there significant differences among families?
-    kruskal.test(x = CircSample$iso, g = CircSample$Family)
+  
     
   # Aggregate - mean circularity by family
   FamilyCirc <- aggregate(CircSample$iso, by=list(CircSample$Family), FUN="mean")
@@ -615,4 +613,37 @@
     mtext("Distance from measurement height (m)", side=2,outer=T, cex=1.5)
   dev.off()
 
+  
+###### Fiture S10: Max tree ht vs. site effects #####
+
+  # Get site effect
+   # Model 1
+    model1 <- lme4::lmer(b1.iso~log(DBH) + log(HOM) + log(WSG) + (1|Site) , data = TaperSample)
+  
+  # Make data frame to store results
+  HtEffects <- data.frame(Site = c(rownames(coef(model1)[[1]])),
+                          Model1 = c(coef(model1)[[1]][,1])-summary(model1)$coefficients[1,1],
+                          HtMax = NA,
+                          Ht95 = NA,
+                          HtMean = NA)
+  
+  # Record max measured height and 95th percentile for height for each site
+  for(i in 1:nrow(HtEffects)){
+    HtEffects$HtMax[i] <- max(TaperSample[TaperSample$Site==HtEffects$Site[i],"Ht"],na.rm=T)
+    HtEffects$Ht95[i] <- quantile(TaperSample[TaperSample$Site==HtEffects$Site[i],"Ht"],0.95,na.rm=T)
+    HtEffects$HtMean[i] <- mean(TaperSample[TaperSample$Site==HtEffects$Site[i],"Ht"],na.rm=T)
+  }
+  
+  # plot
+  summary(lm(Model1~HtMax, data=HtEffects))
+  summary(lm(Model1~Ht95, data=HtEffects))
+  summary(lm(Model1~HtMean, data=HtEffects))
+
+    
+  plot(Model1~HtMax, data=HtEffects,
+       pch=20)
+  plot(Model1~Ht95, data=HtEffects,
+       pch=20)
+  plot(Model1~HtMean, data=HtEffects,
+       pch=20)
   
